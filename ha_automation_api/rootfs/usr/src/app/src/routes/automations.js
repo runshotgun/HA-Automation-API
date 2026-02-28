@@ -13,6 +13,15 @@ function createAutomationsRouter(deps) {
     }
   });
 
+  router.get("/search", requirePermission("list"), async (req, res, next) => {
+    try {
+      const automations = await fileService.searchAutomationMetadata(req.query || {});
+      return res.status(200).json({ count: automations.length, automations });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
   router.get("/:id", requirePermission("read"), async (req, res, next) => {
     try {
       const automation = await fileService.readAutomationById(req.params.id);

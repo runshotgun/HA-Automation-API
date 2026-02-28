@@ -8,6 +8,7 @@ The add-on provides these endpoints:
 
 - `GET /health`
 - `GET /automations`
+- `GET /automations/search`
 - `GET /automations/:id`
 - `PUT /automations/:id`
 - `DELETE /automations/:id`
@@ -128,6 +129,46 @@ List all automations.
 }
 ```
 
+### `GET /automations/search`
+
+Search automations and return automation objects with content fields excluded.
+
+Excluded fields:
+
+- `trigger`, `condition`, `action`
+- `triggers`, `conditions`, `actions`
+- `sequence`
+
+All other top-level fields are returned as-is. The response also guarantees normalized `name`, `visible`, and `enabled` fields.
+
+Supported query params:
+
+- `q`: text search across metadata fields
+- `id`, `name`, `area`, `floor`, `label`, `entity_id`, `icon`: field-specific contains filters
+- `visible`, `enabled`: boolean filters (`true`/`false`, also accepts `1`/`0`, `on`/`off`)
+
+**Response:**
+```json
+{
+  "count": 2,
+  "automations": [
+    {
+      "id": "1673577999532",
+      "alias": "Bedroom Shades",
+      "name": "Bedroom Shades",
+      "area": "Bedroom",
+      "floor": "Second",
+      "label": "Climate",
+      "entity_id": "automation.bedroom_shades",
+      "icon": "mdi:blinds",
+      "mode": "single",
+      "visible": true,
+      "enabled": true
+    }
+  ]
+}
+```
+
 ### `GET /automations/:id`
 
 Read a specific automation by ID.
@@ -206,6 +247,13 @@ curl -H "Authorization: Bearer <TOKEN>" \
 ```bash
 curl -H "Authorization: Bearer <TOKEN>" \
   http://homeassistant.local:8099/automations/1673577999532
+```
+
+### Search Automation Metadata
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" \
+  "http://homeassistant.local:8099/automations/search?q=bedroom&enabled=true"
 ```
 
 ### Update One Automation

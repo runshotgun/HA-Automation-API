@@ -25,6 +25,145 @@ function parseYamlContent(fileContent) {
   }
 }
 
+function normalizeSearchText(value) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeSearchText(item)).filter(Boolean).join(" ");
+  }
+  if (typeof value === "object") {
+    return Object.values(value).map((item) => normalizeSearchText(item)).filter(Boolean).join(" ");
+  }
+  return String(value);
+}
+
+function parseBooleanValue(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    if (value === 1) {
+      return true;
+    }
+    if (value === 0) {
+      return false;
+    }
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["1", "true", "yes", "on", "enabled"].includes(normalized)) {
+      return true;
+    }
+    if (["0", "false", "no", "off", "disabled"].includes(normalized)) {
+      return false;
+    }
+  }
+  return null;
+}
+
+function resolveVisible(automation) {
+  const explicitVisible = parseBooleanValue(automation.visible);
+  if (explicitVisible !== null) {
+    return explicitVisible;
+  }
+  const hidden = parseBooleanValue(automation.hidden);
+  if (hidden !== null) {
+    return !hidden;
+  }
+  return true;
+}
+
+function resolveEnabled(automation) {
+  const explicitEnabled = parseBooleanValue(automation.enabled);
+  if (explicitEnabled !== null) {
+    return explicitEnabled;
+  }
+  const initialState = parseBooleanValue(automation.initial_state);
+  if (initialState !== null) {
+    return initialState;
+  }
+  return true;
+}
+
+const EXCLUDED_AUTOMATION_CONTENT_FIELDS = new Set([
+  "trigger",
+  "condition",
+  "action",
+  "triggers",
+  "conditions",
+  "actions",
+  "sequence",
+]);
+
+function toAutomationMetadata(automation) {
+  const item = automation && typeof automation === "object" ? automation : {};
+  const metadata = { ...item };
+
+  for (const field of EXCLUDED_AUTOMATION_CONTENT_FIELDS) {
+    delete metadata[field];
+  }
+
+  metadata.id = normalizeAutomationId(item);
+  metadata.name = metadata.name ?? item.alias ?? null;
+  metadata.visible = resolveVisible(item);
+  metadata.enabled = resolveEnabled(item);
+
+  return metadata;
+}
+
+function metadataMatchesFilters(metadata, filters) {
+  const textFilters = {
+    name: filters.name,
+    area: filters.area,
+    floor: filters.floor,
+    label: filters.label,
+    entity_id: filters.entity_id,
+    icon: filters.icon,
+    id: filters.id,
+  };
+
+  for (const [field, rawFilter] of Object.entries(textFilters)) {
+    if (rawFilter === undefined || rawFilter === null || rawFilter === "") {
+      continue;
+    }
+    const normalizedFilter = String(rawFilter).trim().toLowerCase();
+    if (!normalizeSearchText(metadata[field]).toLowerCase().includes(normalizedFilter)) {
+      return false;
+    }
+  }
+
+  if (filters.visible !== undefined) {
+    const visibleFilter = parseBooleanValue(filters.visible);
+    if (visibleFilter === null) {
+      throw new ApiError(422, "Invalid 'visible' query value. Expected true/false.");
+    }
+    if (metadata.visible !== visibleFilter) {
+      return false;
+    }
+  }
+
+  if (filters.enabled !== undefined) {
+    const enabledFilter = parseBooleanValue(filters.enabled);
+    if (enabledFilter === null) {
+      throw new ApiError(422, "Invalid 'enabled' query value. Expected true/false.");
+    }
+    if (metadata.enabled !== enabledFilter) {
+      return false;
+    }
+  }
+
+  if (filters.q !== undefined && filters.q !== null && filters.q !== "") {
+    const normalizedQuery = String(filters.q).trim().toLowerCase();
+    const matchesQuery = normalizeSearchText(metadata).toLowerCase().includes(normalizedQuery);
+    if (!matchesQuery) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function createAutomationFileService(options, reloadService) {
   const automationsFile = options.automations_file;
   const backupKeep = options.backup_keep;
@@ -153,11 +292,17 @@ function createAutomationFileService(options, reloadService) {
     return removed;
   }
 
+  async function searchAutomationMetadata(filters = {}) {
+    const automations = await readAutomations();
+    return automations.map((automation) => toAutomationMetadata(automation)).filter((metadata) => metadataMatchesFilters(metadata, filters));
+  }
+
   return {
     readAutomations,
     readAutomationById,
     updateAutomation,
     deleteAutomation,
+    searchAutomationMetadata,
   };
 }
 
