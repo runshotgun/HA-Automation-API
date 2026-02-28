@@ -1,0 +1,34 @@
+name: Home Automation API
+version: "0.1.0"
+slug: ha_automation_api
+description: Expose Home Assistant automations through a secure REST API.
+url: "https://github.com/kevenmenard/ha-automation-api-addon/tree/main/ha_automation_api"
+arch:
+  - aarch64
+  - amd64
+  - armv7
+init: false
+startup: services
+boot: auto
+homeassistant_api: true
+apparmor: false
+ports:
+  8099/tcp: 8099
+map:
+  - config:rw
+options:
+  allow_list: true
+  allow_read: true
+  allow_edit: false
+  allow_delete: false
+  automations_file: /config/automations.yaml
+  backup_keep: 10
+  home_assistant_url: http://homeassistant:8123
+schema:
+  allow_list: bool
+  allow_read: bool
+  allow_edit: bool
+  allow_delete: bool
+  automations_file: str
+  backup_keep: int(1,100)
+  home_assistant_url: str
