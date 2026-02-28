@@ -19,6 +19,7 @@ map:
 options:
   allow_list: true
   allow_read: true
+  allow_search: true
   allow_edit: false
   allow_delete: false
   allowed_ips: []
@@ -28,6 +29,7 @@ options:
 schema:
   allow_list: bool
   allow_read: bool
+  allow_search: bool
   allow_edit: bool
   allow_delete: bool
   allowed_ips:

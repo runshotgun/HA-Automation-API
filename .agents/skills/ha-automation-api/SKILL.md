@@ -13,6 +13,7 @@ REST API for managing Home Assistant automations. Requires the [HA Automation AP
 |----------|--------|---------|
 | `/health` | GET | Health check (no auth) |
 | `/automations` | GET | List all automations |
+| `/automations/search` | GET | Search automations (metadata only) |
 | `/automations/:id` | GET | Read one automation |
 | `/automations/:id` | PUT | Update automation |
 | `/automations/:id` | DELETE | Delete automation |
@@ -88,7 +89,7 @@ Error body: `{ "error": "message", "details": {...} }`
 ## Constraints
 
 - **IP whitelist**: Add-on option `allowed_ips` must include caller IP. Empty list = no access.
-- **Permissions**: Add-on options `allow_list`, `allow_read`, `allow_edit`, `allow_delete` gate each operation.
+- **Permissions**: Add-on options `allow_list`, `allow_read`, `allow_search`, `allow_edit`, `allow_delete` gate each operation.
 - **Concurrency**: Only one PUT or DELETE at a time. Second write returns 429.
 
 ## Example (curl)

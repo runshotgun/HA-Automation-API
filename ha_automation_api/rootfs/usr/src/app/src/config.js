@@ -3,6 +3,7 @@ const fs = require("fs");
 const DEFAULT_OPTIONS = {
   allow_list: true,
   allow_read: true,
+  allow_search: true,
   allow_edit: false,
   allow_delete: false,
   allowed_ips: [],

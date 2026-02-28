@@ -18,7 +18,7 @@ The add-on provides these endpoints:
 - **Long-lived token authentication**: Uses Home Assistant long-lived access tokens for every API call
 - **Token validation**: Validates caller tokens against Home Assistant `/api/`
 - **IP allowlist enforcement**: Requests are allowed only when source IP matches `allowed_ips`
-- **Permission locks**: Per-operation permission controls (`list`, `read`, `edit`, `delete`) via add-on options
+- **Permission locks**: Per-operation permission controls (`list`, `read`, `search`, `edit`, `delete`) via add-on options
 - **Safe write operations**: 
   - Validates YAML before touching disk
   - Writes to temp copy first
@@ -59,6 +59,7 @@ Example configuration:
 ```yaml
 allow_list: true
 allow_read: true
+allow_search: true
 allow_edit: false
 allow_delete: false
 allowed_ips: []
@@ -71,6 +72,7 @@ home_assistant_url: http://homeassistant:8123
 
 - `allow_list`: Enable `GET /automations` (list all automations)
 - `allow_read`: Enable `GET /automations/:id` (read one automation)
+- `allow_search`: Enable `GET /automations/search` (search automations metadata)
 - `allow_edit`: Enable `PUT /automations/:id` (edit one automation)
 - `allow_delete`: Enable `DELETE /automations/:id` (delete one automation)
 - `allowed_ips`: Whitelist of client source IPs allowed to call the API. Default `[]` (enabled, no IPs allowed until configured).

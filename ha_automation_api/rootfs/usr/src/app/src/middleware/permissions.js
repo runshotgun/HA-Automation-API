@@ -4,6 +4,7 @@ function createPermissionMiddleware(options) {
   const permissions = {
     list: Boolean(options.allow_list),
     read: Boolean(options.allow_read),
+    search: Boolean(options.allow_search),
     edit: Boolean(options.allow_edit),
     delete: Boolean(options.allow_delete),
   };
