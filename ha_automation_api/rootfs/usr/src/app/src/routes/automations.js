@@ -6,7 +6,7 @@ function createAutomationsRouter(deps) {
 
   router.get("/", requirePermission("list"), async (req, res, next) => {
     try {
-      const automations = await fileService.readAutomations();
+      const automations = await fileService.searchAutomationMetadata(req.query || {});
       return res.status(200).json({ count: automations.length, automations });
     } catch (error) {
       return next(error);

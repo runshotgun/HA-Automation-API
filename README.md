@@ -70,7 +70,7 @@ home_assistant_url: http://homeassistant:8123
 
 ### Configuration Options
 
-- `allow_list`: Enable `GET /automations` (list all automations)
+- `allow_list`: Enable `GET /automations` (list automation metadata)
 - `allow_read`: Enable `GET /automations/:id` (read one automation)
 - `allow_search`: Enable `GET /automations/search` (search automations metadata)
 - `allow_edit`: Enable `PUT /automations/:id` (edit one automation)
@@ -114,7 +114,21 @@ Health check endpoint (no authentication required).
 
 ### `GET /automations`
 
-List all automations.
+List automation metadata and exclude automation content fields (same behavior as `GET /automations/search`).
+
+Excluded fields:
+
+- `trigger`, `condition`, `action`
+- `triggers`, `conditions`, `actions`
+- `sequence`
+
+All other top-level fields are returned as-is. The response also guarantees normalized `name`, `visible`, and `enabled` fields.
+
+Supported query params:
+
+- `q`: text search across metadata fields
+- `id`, `name`, `area`, `floor`, `label`, `entity_id`, `icon`: field-specific contains filters
+- `visible`, `enabled`: boolean filters (`true`/`false`, also accepts `1`/`0`, `on`/`off`)
 
 **Response:**
 ```json
