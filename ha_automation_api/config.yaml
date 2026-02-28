@@ -21,6 +21,7 @@ options:
   allow_read: true
   allow_edit: false
   allow_delete: false
+  allowed_ips: []
   automations_file: /config/automations.yaml
   backup_keep: 10
   home_assistant_url: http://homeassistant:8123
@@ -29,6 +30,8 @@ schema:
   allow_read: bool
   allow_edit: bool
   allow_delete: bool
+  allowed_ips:
+    - str
   automations_file: str
   backup_keep: int(1,100)
   home_assistant_url: str

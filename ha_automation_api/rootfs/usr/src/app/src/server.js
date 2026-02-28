@@ -2,6 +2,7 @@ const express = require("express");
 const { loadOptions } = require("./config");
 const { ApiError } = require("./errors");
 const { createAuthMiddleware } = require("./middleware/auth");
+const { createIpWhitelistMiddleware } = require("./middleware/ipWhitelist");
 const { createPermissionMiddleware } = require("./middleware/permissions");
 const { createWriteLockMiddleware } = require("./middleware/writeLock");
 const { createReloadService } = require("./services/reloadService");
@@ -16,6 +17,7 @@ const reloadService = createReloadService(options);
 const fileService = createAutomationFileService(options, reloadService);
 const requirePermission = createPermissionMiddleware(options);
 const writeLock = createWriteLockMiddleware();
+const ipWhitelist = createIpWhitelistMiddleware(options);
 const auth = createAuthMiddleware(options);
 
 app.use(express.json({ limit: "2mb" }));
@@ -27,6 +29,7 @@ app.get("/health", (_req, res) => {
   });
 });
 
+app.use(ipWhitelist);
 app.use(auth);
 app.use(
   "/automations",

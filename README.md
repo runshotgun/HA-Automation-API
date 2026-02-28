@@ -16,6 +16,7 @@ The add-on provides these endpoints:
 
 - **Long-lived token authentication**: Uses Home Assistant long-lived access tokens for every API call
 - **Token validation**: Validates caller tokens against Home Assistant `/api/`
+- **IP allowlist enforcement**: Requests are allowed only when source IP matches `allowed_ips`
 - **Permission locks**: Per-operation permission controls (`list`, `read`, `edit`, `delete`) via add-on options
 - **Safe write operations**: 
   - Validates YAML before touching disk
@@ -46,7 +47,7 @@ https://github.com/runshotgun/HA-Automation-API
 
 1. Open the **Home Automation API** add-on
 2. Click **Install**
-3. In the add-on **Configuration** tab, set options (see example below)
+3. In the add-on **Configuration** tab, use the generated option fields/lists (see example below)
 4. Click **Start**
 5. Check **Logs** for startup success
 
@@ -59,6 +60,7 @@ allow_list: true
 allow_read: true
 allow_edit: false
 allow_delete: false
+allowed_ips: []
 automations_file: /config/automations.yaml
 backup_keep: 10
 home_assistant_url: http://homeassistant:8123
@@ -70,6 +72,7 @@ home_assistant_url: http://homeassistant:8123
 - `allow_read`: Enable `GET /automations/:id` (read one automation)
 - `allow_edit`: Enable `PUT /automations/:id` (edit one automation)
 - `allow_delete`: Enable `DELETE /automations/:id` (delete one automation)
+- `allowed_ips`: Whitelist of client source IPs allowed to call the API. Default `[]` (enabled, no IPs allowed until configured).
 - `automations_file`: Path to the automation YAML file (default `/config/automations.yaml`)
 - `backup_keep`: Number of timestamped backups to keep (default `10`)
 - `home_assistant_url`: Home Assistant URL used for token validation and automation reload calls
@@ -255,7 +258,7 @@ This prevents:
 ## Error Codes
 
 - `401`: Missing or invalid bearer token
-- `403`: Operation disabled by add-on permissions (check configuration)
+- `403`: Source IP not in `allowed_ips` or operation disabled by add-on permissions
 - `404`: Automation ID not found
 - `422`: Invalid payload or invalid YAML structure
 - `429`: Write lock active (another write operation is in progress)
@@ -277,8 +280,9 @@ This prevents:
 
 ### Permission Errors (403)
 
-- Check add-on configuration options (`allow_list`, `allow_read`, `allow_edit`, `allow_delete`)
-- Ensure the operation you're trying to perform is enabled
+- If error mentions `allowed_ips`, add your client IP to the add-on `allowed_ips` list
+- Check add-on permission options (`allow_list`, `allow_read`, `allow_edit`, `allow_delete`)
+- Ensure the requested operation is enabled
 
 ### Write Lock Errors (429)
 

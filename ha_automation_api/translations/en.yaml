@@ -1,0 +1,28 @@
+configuration:
+  allow_list:
+    name: Allow listing automations
+    description: Enable GET /automations to return all automations.
+  allow_read:
+    name: Allow reading a single automation
+    description: Enable GET /automations/{id}.
+  allow_edit:
+    name: Allow editing automations
+    description: Enable PUT /automations/{id}.
+  allow_delete:
+    name: Allow deleting automations
+    description: Enable DELETE /automations/{id}.
+  allowed_ips:
+    name: Allowed IP addresses
+    description: |
+      Only requests from these IP addresses can call the API.
+      Example values: 192.168.1.10, 192.168.1.25.
+      Empty list means no clients are allowed.
+  automations_file:
+    name: Automations YAML path
+    description: Path to the automations YAML file inside Home Assistant.
+  backup_keep:
+    name: Backup retention count
+    description: Number of timestamped automations backups to keep.
+  home_assistant_url:
+    name: Home Assistant URL
+    description: Base URL used for token validation and automation reload calls.

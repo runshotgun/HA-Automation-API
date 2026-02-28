@@ -5,6 +5,7 @@ const DEFAULT_OPTIONS = {
   allow_read: true,
   allow_edit: false,
   allow_delete: false,
+  allowed_ips: [],
   automations_file: "/config/automations.yaml",
   backup_keep: 10,
   home_assistant_url: "http://homeassistant:8123",
@@ -32,6 +33,14 @@ function loadOptions() {
   if (options.backup_keep < 1) {
     options.backup_keep = 1;
   }
+
+  if (!Array.isArray(options.allowed_ips)) {
+    options.allowed_ips = [];
+  }
+
+  options.allowed_ips = options.allowed_ips
+    .map((ip) => String(ip).trim())
+    .filter((ip) => ip.length > 0);
 
   return options;
 }
