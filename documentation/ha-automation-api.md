@@ -1,5 +1,7 @@
 # Home Automation API Add-on
 
+For install steps and quick usage, see `documentation/README.md`.
+
 ## Purpose
 
 This Home Assistant add-on exposes automations through a REST API with:
