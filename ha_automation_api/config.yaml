@@ -1,5 +1,5 @@
 name: Home Automation API
-version: "0.1.0"
+version: "0.1.1"
 slug: ha_automation_api
 description: Expose Home Assistant automations through a secure REST API.
 url: "https://github.com/kevenmenard/ha-automation-api-addon/tree/main/ha_automation_api"
