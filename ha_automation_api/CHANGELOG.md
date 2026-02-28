@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- Added `PATCH /automations/:id` for partial top-level automation updates.
+- Changed `PUT /automations/:id` to full replacement behavior (fields omitted from payload are removed).
+- Updated API documentation, skill docs, and translation labels to reflect `PUT`/`PATCH` semantics and write concurrency behavior.
+
 ## 0.1.3
 
 - Updated `GET /automations` to return metadata-only automation objects by excluding automation content fields.

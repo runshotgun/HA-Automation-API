@@ -3,6 +3,7 @@ const express = require("express");
 function createAutomationsRouter(deps) {
   const { fileService, requirePermission, writeLock } = deps;
   const router = express.Router();
+  const parseAutomationPayload = (body) => (body && typeof body === "object" && body.automation ? body.automation : body);
 
   router.get("/", requirePermission("list"), async (req, res, next) => {
     try {
@@ -33,8 +34,22 @@ function createAutomationsRouter(deps) {
 
   router.put("/:id", requirePermission("edit"), writeLock, async (req, res, next) => {
     try {
-      const payload = req.body && typeof req.body === "object" && req.body.automation ? req.body.automation : req.body;
+      const payload = parseAutomationPayload(req.body);
       const automation = await fileService.updateAutomation(req.params.id, payload, req.haToken);
+      return res.status(200).json({ automation });
+    } catch (error) {
+      return next(error);
+    } finally {
+      if (typeof req.releaseWriteLock === "function") {
+        req.releaseWriteLock();
+      }
+    }
+  });
+
+  router.patch("/:id", requirePermission("edit"), writeLock, async (req, res, next) => {
+    try {
+      const payload = parseAutomationPayload(req.body);
+      const automation = await fileService.patchAutomation(req.params.id, payload, req.haToken);
       return res.status(200).json({ automation });
     } catch (error) {
       return next(error);

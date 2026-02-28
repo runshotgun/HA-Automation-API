@@ -11,6 +11,7 @@ The add-on provides these endpoints:
 - `GET /automations/search`
 - `GET /automations/:id`
 - `PUT /automations/:id`
+- `PATCH /automations/:id`
 - `DELETE /automations/:id`
 
 ### Core Features
@@ -27,7 +28,7 @@ The add-on provides these endpoints:
   - Deletes old file, then renames temp file atomically
   - Reloads automations through Home Assistant API
   - Restores from backup if reload/write fails
-- **Concurrency control**: Only one mutating request (`PUT`/`DELETE`) at a time; concurrent writes return `429`
+- **Concurrency control**: Only one mutating request (`PUT`/`PATCH`/`DELETE`) at a time; concurrent writes return `429`
 
 ## Add This Add-on To Home Assistant
 
@@ -73,7 +74,7 @@ home_assistant_url: http://homeassistant:8123
 - `allow_list`: Enable `GET /automations` (list automation metadata)
 - `allow_read`: Enable `GET /automations/:id` (read one automation)
 - `allow_search`: Enable `GET /automations/search` (search automations metadata)
-- `allow_edit`: Enable `PUT /automations/:id` (edit one automation)
+- `allow_edit`: Enable `PUT`/`PATCH /automations/:id` (edit one automation)
 - `allow_delete`: Enable `DELETE /automations/:id` (delete one automation)
 - `allowed_ips`: Whitelist of client source IPs allowed to call the API. Default `[]` (enabled, no IPs allowed until configured).
 - `automations_file`: Path to the automation YAML file (default `/config/automations.yaml`)
@@ -202,7 +203,7 @@ Read a specific automation by ID.
 
 ### `PUT /automations/:id`
 
-Update an automation. You can send either:
+Replace an automation (full replacement). You can send either:
 
 **Option 1:** Wrapped in `automation` key:
 ```json
@@ -221,6 +222,32 @@ Update an automation. You can send either:
   "description": "Updated by API"
 }
 ```
+
+`PUT` replaces the stored automation object with the payload (and forces `id` to match `:id`).
+Fields omitted from the payload are removed from the automation.
+
+### `PATCH /automations/:id`
+
+Partially update an automation (top-level merge). You can send either:
+
+**Option 1:** Wrapped in `automation` key:
+```json
+{
+  "automation": {
+    "alias": "Updated alias"
+  }
+}
+```
+
+**Option 2:** Direct automation object:
+```json
+{
+  "alias": "Updated alias"
+}
+```
+
+`PATCH` merges top-level fields into the existing automation (and forces `id` to match `:id`).
+Nested structures like `trigger`, `condition`, and `action` are replaced as whole fields when provided.
 
 **Response:**
 ```json
@@ -278,6 +305,16 @@ curl -H "Authorization: Bearer <TOKEN>" \
 curl -X PUT \
   -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
+  -d '{"automation":{"id":"1673577999532","alias":"Bedroom Shades Updated","trigger":[...],"condition":[],"action":[...]}}' \
+  http://homeassistant.local:8099/automations/1673577999532
+```
+
+### Patch One Automation
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
   -d '{"automation":{"alias":"Bedroom Shades Updated"}}' \
   http://homeassistant.local:8099/automations/1673577999532
 ```
@@ -312,7 +349,7 @@ This ensures that:
 
 ## Concurrency Model
 
-Only one `PUT` or `DELETE` request can run at a time. If another write operation is already in progress, the add-on responds with `HTTP 429 Too Many Requests`.
+Only one `PUT`, `PATCH`, or `DELETE` request can run at a time. If another write operation is already in progress, the add-on responds with `HTTP 429 Too Many Requests`.
 
 This prevents:
 - Race conditions when multiple clients update automations simultaneously
@@ -352,7 +389,7 @@ This prevents:
 
 - Wait for the current write operation to complete
 - Check add-on logs to see what operation is running
-- Only one `PUT` or `DELETE` can run at a time
+- Only one `PUT`, `PATCH`, or `DELETE` can run at a time
 
 ### YAML Validation Errors (422)
 

@@ -248,10 +248,38 @@ function createAutomationFileService(options, reloadService) {
     }
   }
 
-  async function updateAutomation(id, incomingAutomation, token) {
+  function validateIncomingAutomation(incomingAutomation) {
     if (!incomingAutomation || typeof incomingAutomation !== "object" || Array.isArray(incomingAutomation)) {
       throw new ApiError(422, "Request body must be a JSON object.");
     }
+  }
+
+  async function updateAutomation(id, incomingAutomation, token) {
+    validateIncomingAutomation(incomingAutomation);
+
+    const normalizedId = String(id);
+    const automations = await readAutomations();
+    const index = automations.findIndex((item) => normalizeAutomationId(item) === normalizedId);
+
+    if (index < 0) {
+      throw new ApiError(404, `Automation '${normalizedId}' was not found.`);
+    }
+
+    const replaced = {
+      ...incomingAutomation,
+      id: normalizedId,
+    };
+
+    const updatedAutomations = [...automations];
+    updatedAutomations[index] = replaced;
+
+    await writeWithSwapAndReload(updatedAutomations, token);
+
+    return replaced;
+  }
+
+  async function patchAutomation(id, incomingAutomation, token) {
+    validateIncomingAutomation(incomingAutomation);
 
     const normalizedId = String(id);
     const automations = await readAutomations();
@@ -301,6 +329,7 @@ function createAutomationFileService(options, reloadService) {
     readAutomations,
     readAutomationById,
     updateAutomation,
+    patchAutomation,
     deleteAutomation,
     searchAutomationMetadata,
   };

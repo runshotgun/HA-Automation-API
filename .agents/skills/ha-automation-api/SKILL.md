@@ -15,7 +15,8 @@ REST API for managing Home Assistant automations. Requires the [HA Automation AP
 | `/automations` | GET | List automations (metadata only) |
 | `/automations/search` | GET | Search automations metadata (same shape as `/automations`) |
 | `/automations/:id` | GET | Read one automation |
-| `/automations/:id` | PUT | Update automation |
+| `/automations/:id` | PUT | Replace automation (full replacement) |
+| `/automations/:id` | PATCH | Partially update automation (top-level merge) |
 | `/automations/:id` | DELETE | Delete automation |
 
 ## Authentication
@@ -79,10 +80,22 @@ PUT /automations/{id}
 Authorization: Bearer <TOKEN>
 Content-Type: application/json
 
-{"automation": {"alias": "New name", "description": "..."}}
+{"automation": {"id": "1673577999532", "alias": "New name", "trigger": [...], "condition": [], "action": [...]} }
 ```
 
-Or send the automation object directly (without `automation` wrapper). Response: `{ "automation": {...} }`
+Or send the automation object directly (without `automation` wrapper). `PUT` replaces the automation object (id is always forced to URL id). Response: `{ "automation": {...} }`
+
+### Patch automation
+
+```http
+PATCH /automations/{id}
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+
+{"automation": {"alias": "New name"}}
+```
+
+Or send the automation object directly. `PATCH` merges top-level fields only (nested objects/arrays are replaced as a whole when provided). Response: `{ "automation": {...} }`
 
 ### Delete automation
 
@@ -101,7 +114,7 @@ Response: `{ "deleted": true, "automation": {...} }`
 | 403 | IP not in `allowed_ips` whitelist, or operation disabled by add-on config |
 | 404 | Automation ID not found |
 | 422 | Invalid YAML or payload |
-| 429 | Write lock active (retry after current PUT/DELETE completes) |
+| 429 | Write lock active (retry after current PUT/PATCH/DELETE completes) |
 | 500 | Internal error |
 
 Error body: `{ "error": "message", "details": {...} }`
@@ -109,8 +122,8 @@ Error body: `{ "error": "message", "details": {...} }`
 ## Constraints
 
 - **IP whitelist**: Add-on option `allowed_ips` must include caller IP. Empty list = no access.
-- **Permissions**: Add-on options `allow_list`, `allow_read`, `allow_search`, `allow_edit`, `allow_delete` gate each operation.
-- **Concurrency**: Only one PUT or DELETE at a time. Second write returns 429.
+- **Permissions**: Add-on options `allow_list`, `allow_read`, `allow_search`, `allow_edit` (`PUT` + `PATCH`), `allow_delete` gate each operation.
+- **Concurrency**: Only one PUT, PATCH, or DELETE at a time. Second write returns 429.
 
 ## Example (curl)
 
@@ -120,6 +133,11 @@ curl -H "Authorization: Bearer $TOKEN" http://homeassistant.local:8099/automatio
 
 # Update
 curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"automation":{"id":"1673577999532","alias":"Updated","trigger":[...],"condition":[],"action":[...]}}' \
+  http://homeassistant.local:8099/automations/1673577999532
+
+# Patch
+curl -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"automation":{"alias":"Updated"}}' \
   http://homeassistant.local:8099/automations/1673577999532
 ```

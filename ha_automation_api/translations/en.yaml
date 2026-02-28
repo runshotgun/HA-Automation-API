@@ -1,7 +1,7 @@
 configuration:
   allow_list:
     name: Allow listing automations
-    description: Enable GET /automations to return all automations.
+    description: Enable GET /automations to return automation metadata.
   allow_read:
     name: Allow reading a single automation
     description: Enable GET /automations/{id}.
@@ -10,7 +10,7 @@ configuration:
     description: Enable GET /automations/search.
   allow_edit:
     name: Allow editing automations
-    description: Enable PUT /automations/{id}.
+    description: Enable PUT/PATCH /automations/{id}.
   allow_delete:
     name: Allow deleting automations
     description: Enable DELETE /automations/{id}.
