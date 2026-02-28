@@ -147,7 +147,7 @@ Supported query params:
 
 ### `GET /automations/search`
 
-Search automations and return automation objects with content fields excluded.
+Search automations and return metadata-only automation objects (same response shape as `GET /automations`).
 
 Excluded fields:
 

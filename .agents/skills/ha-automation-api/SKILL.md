@@ -12,8 +12,8 @@ REST API for managing Home Assistant automations. Requires the [HA Automation AP
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/health` | GET | Health check (no auth) |
-| `/automations` | GET | List all automations |
-| `/automations/search` | GET | Search automations (metadata only) |
+| `/automations` | GET | List automations (metadata only) |
+| `/automations/search` | GET | Search automations metadata (same shape as `/automations`) |
 | `/automations/:id` | GET | Read one automation |
 | `/automations/:id` | PUT | Update automation |
 | `/automations/:id` | DELETE | Delete automation |
@@ -42,6 +42,26 @@ Authorization: Bearer <TOKEN>
 ```
 
 Response: `{ "count": N, "automations": [...] }`
+
+Returns metadata-only automation objects (content fields excluded):
+
+- `trigger`, `condition`, `action`
+- `triggers`, `conditions`, `actions`
+- `sequence`
+
+Supports filters via query params:
+
+- text: `q`, `id`, `name`, `area`, `floor`, `label`, `entity_id`, `icon`
+- boolean: `visible`, `enabled`
+
+### Search automations metadata
+
+```http
+GET /automations/search?q=bedroom&enabled=true
+Authorization: Bearer <TOKEN>
+```
+
+Returns the same metadata-only response shape as `GET /automations`, with the same supported filters.
 
 ### Read one automation
 
