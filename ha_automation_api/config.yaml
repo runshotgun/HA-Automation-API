@@ -1,4 +1,4 @@
-name: Home Automation API
+name: HA Automation API
 version: "0.1.1"
 slug: ha_automation_api
 description: Expose Home Assistant automations through a secure REST API.

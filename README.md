@@ -45,7 +45,7 @@ https://github.com/runshotgun/HA-Automation-API
 
 ### 2) Install and Start
 
-1. Open the **Home Automation API** add-on
+1. Open the **HA Automation API** add-on
 2. Click **Install**
 3. In the add-on **Configuration** tab, use the generated option fields/lists (see example below)
 4. Click **Start**
