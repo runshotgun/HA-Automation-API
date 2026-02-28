@@ -5,6 +5,9 @@ configuration:
   allow_read:
     name: Allow reading a single automation
     description: Enable GET /automations/{id}.
+  allow_search:
+    name: Allow searching automations
+    description: Enable GET /automations/search.
   allow_edit:
     name: Allow editing automations
     description: Enable PUT /automations/{id}.
