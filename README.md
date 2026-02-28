@@ -1,6 +1,6 @@
-# HA Automation API Add-on
+# HA Automation REST API Add-on
 
-This repository contains a Home Assistant add-on that exposes automation management over HTTP.
+This repository contains a Home Assistant add-on that exposes automation management through a REST API.
 
 ## What It Does
 
@@ -47,7 +47,7 @@ https://github.com/runshotgun/HA-Automation-API
 
 ### 2) Install and Start
 
-1. Open the **HA Automation API** add-on
+1. Open the **HA Automation REST API** add-on
 2. Click **Install**
 3. In the add-on **Configuration** tab, use the generated option fields/lists (see example below)
 4. Click **Start**

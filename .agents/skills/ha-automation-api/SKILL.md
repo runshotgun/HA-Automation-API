@@ -1,11 +1,11 @@
 ---
 name: ha-automation-api
-description: Call the HA Automation API to list, read, edit, or delete Home Assistant automations. Use when integrating with Home Assistant automations, building scripts that manage automations, or when the user mentions the HA Automation API add-on.
+description: Call the HA Automation REST API to list, read, edit, or delete Home Assistant automations. Use when integrating with Home Assistant automations, building scripts that manage automations, or when the user mentions the HA Automation REST API add-on.
 ---
 
-# HA Automation API
+# HA Automation REST API
 
-REST API for managing Home Assistant automations. Requires the [HA Automation API add-on](https://github.com/runshotgun/HA-Automation-API) installed in Home Assistant.
+REST API for managing Home Assistant automations. Requires the [HA Automation REST API add-on](https://github.com/runshotgun/HA-Automation-API) installed in Home Assistant.
 
 ## Quick Reference
 
