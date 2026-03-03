@@ -1,7 +1,7 @@
 {
   "name": "ha-automation-api-addon",
   "version": "0.1.0",
-  "description": "Home Assistant Add-on API for automation CRUD",
+  "description": "Home Assistant Add-on API for automation and script CRUD",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

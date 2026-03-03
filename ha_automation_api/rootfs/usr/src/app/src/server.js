@@ -7,7 +7,9 @@ const { createPermissionMiddleware } = require("./middleware/permissions");
 const { createWriteLockMiddleware } = require("./middleware/writeLock");
 const { createReloadService } = require("./services/reloadService");
 const { createAutomationFileService } = require("./services/automationFileService");
+const { createScriptFileService } = require("./services/scriptFileService");
 const { createAutomationsRouter } = require("./routes/automations");
+const { createScriptsRouter } = require("./routes/scripts");
 
 const options = loadOptions();
 const app = express();
@@ -15,6 +17,7 @@ const port = Number(process.env.PORT || 8099);
 
 const reloadService = createReloadService(options);
 const fileService = createAutomationFileService(options, reloadService);
+const scriptFileService = createScriptFileService(options, reloadService);
 const requirePermission = createPermissionMiddleware(options);
 const writeLock = createWriteLockMiddleware();
 const ipWhitelist = createIpWhitelistMiddleware(options);
@@ -35,6 +38,14 @@ app.use(
   "/automations",
   createAutomationsRouter({
     fileService,
+    requirePermission,
+    writeLock,
+  })
+);
+app.use(
+  "/scripts",
+  createScriptsRouter({
+    fileService: scriptFileService,
     requirePermission,
     writeLock,
   })

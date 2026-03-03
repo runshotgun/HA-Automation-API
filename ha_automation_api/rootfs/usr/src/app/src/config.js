@@ -8,6 +8,7 @@ const DEFAULT_OPTIONS = {
   allow_delete: false,
   allowed_ips: [],
   automations_file: "/config/automations.yaml",
+  scripts_file: "/config/scripts.yaml",
   backup_keep: 10,
   home_assistant_url: "http://homeassistant:8123",
 };

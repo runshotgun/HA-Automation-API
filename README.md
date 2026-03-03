@@ -1,6 +1,6 @@
 # HA Automation REST API Add-on
 
-This repository contains a Home Assistant add-on that exposes automation management through a REST API.
+This repository contains a Home Assistant add-on that exposes automation and script management through a REST API.
 
 ## What It Does
 
@@ -13,6 +13,12 @@ The add-on provides these endpoints:
 - `PUT /automations/:id`
 - `PATCH /automations/:id`
 - `DELETE /automations/:id`
+- `GET /scripts`
+- `GET /scripts/search`
+- `GET /scripts/:id`
+- `PUT /scripts/:id`
+- `PATCH /scripts/:id`
+- `DELETE /scripts/:id`
 
 ### Core Features
 
@@ -26,7 +32,7 @@ The add-on provides these endpoints:
   - Validates temp copy after writing
   - Creates timestamped backups
   - Deletes old file, then renames temp file atomically
-  - Reloads automations through Home Assistant API
+  - Reloads automations/scripts through Home Assistant API
   - Restores from backup if reload/write fails
 - **Concurrency control**: Only one mutating request (`PUT`/`PATCH`/`DELETE`) at a time; concurrent writes return `429`
 
@@ -65,21 +71,23 @@ allow_edit: false
 allow_delete: false
 allowed_ips: []
 automations_file: /config/automations.yaml
+scripts_file: /config/scripts.yaml
 backup_keep: 10
 home_assistant_url: http://homeassistant:8123
 ```
 
 ### Configuration Options
 
-- `allow_list`: Enable `GET /automations` (list automation metadata)
-- `allow_read`: Enable `GET /automations/:id` (read one automation)
-- `allow_search`: Enable `GET /automations/search` (search automations metadata)
-- `allow_edit`: Enable `PUT`/`PATCH /automations/:id` (edit one automation)
-- `allow_delete`: Enable `DELETE /automations/:id` (delete one automation)
+- `allow_list`: Enable `GET /automations` and `GET /scripts` (list metadata)
+- `allow_read`: Enable `GET /automations/:id` and `GET /scripts/:id` (read one object)
+- `allow_search`: Enable `GET /automations/search` and `GET /scripts/search` (search metadata)
+- `allow_edit`: Enable `PUT`/`PATCH` for `/automations/:id` and `/scripts/:id`
+- `allow_delete`: Enable `DELETE` for `/automations/:id` and `/scripts/:id`
 - `allowed_ips`: Whitelist of client source IPs allowed to call the API. Default `[]` (enabled, no IPs allowed until configured).
 - `automations_file`: Path to the automation YAML file (default `/config/automations.yaml`)
+- `scripts_file`: Path to the scripts YAML file (default `/config/scripts.yaml`)
 - `backup_keep`: Number of timestamped backups to keep (default `10`)
-- `home_assistant_url`: Home Assistant URL used for token validation and automation reload calls
+- `home_assistant_url`: Home Assistant URL used for token validation and automation/script reload calls
 
 ## Authentication
 
@@ -276,6 +284,54 @@ Delete an automation by ID.
 }
 ```
 
+### Scripts Endpoints (`/scripts`)
+
+Scripts endpoints mirror automation behavior with the same auth, permissions, write lock, backup, and reload guarantees:
+
+- `GET /scripts`
+- `GET /scripts/search`
+- `GET /scripts/:id`
+- `PUT /scripts/:id`
+- `PATCH /scripts/:id`
+- `DELETE /scripts/:id`
+
+Key differences:
+
+- `scripts.yaml` is treated as a mapping object (top-level key = script id used by `:id`).
+- Metadata list/search responses exclude `sequence` and include normalized `id`, `name`, `visible`, `enabled`.
+- `PUT`/`PATCH` accept wrapped payloads (`{ "script": { ... } }`) or direct objects, same as automations.
+- `PUT` replaces the script body at that key, `PATCH` merges top-level fields, and `DELETE` removes the key from `scripts.yaml`.
+
+**List/Search response:**
+```json
+{
+  "count": 1,
+  "scripts": [
+    {
+      "id": "lights_evening",
+      "alias": "Lights Evening",
+      "name": "Lights Evening",
+      "mode": "single",
+      "visible": true,
+      "enabled": true
+    }
+  ]
+}
+```
+
+**Read/Write response shape:**
+```json
+{
+  "script": {
+    "id": "lights_evening",
+    "alias": "Lights Evening",
+    "sequence": [
+      { "service": "light.turn_on", "target": { "entity_id": "light.kitchen" } }
+    ]
+  }
+}
+```
+
 ## Quick API Examples
 
 ### List Automations
@@ -327,18 +383,35 @@ curl -X DELETE \
   http://homeassistant.local:8099/automations/1673577999532
 ```
 
+### List Scripts
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" \
+  http://homeassistant.local:8099/scripts
+```
+
+### Patch One Script
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"script":{"alias":"Evening Lights Updated"}}' \
+  http://homeassistant.local:8099/scripts/lights_evening
+```
+
 ## Write Safety Flow
 
 For edit/delete operations, the add-on follows this safety flow:
 
 1. Load and validate the full YAML structure
-2. Build updated automation list in memory
-3. Write updated list to a temp file (`automations.yaml.new`)
+2. Build updated automation/script data in memory
+3. Write updated data to a temp file (`<target>.new`)
 4. Re-read and validate temp file to ensure it's valid on disk
-5. Create a timestamped backup (`automations.yaml.bak.<timestamp>`)
-6. Delete current `automations.yaml`
-7. Rename temp file to `automations.yaml`
-8. Reload automations through Home Assistant API
+5. Create a timestamped backup (`<target>.bak.<timestamp>`)
+6. Delete current target file
+7. Rename temp file to target file
+8. Reload automations/scripts through Home Assistant API
 9. On failure, restore from backup and report error
 
 This ensures that:
@@ -360,7 +433,7 @@ This prevents:
 
 - `401`: Missing or invalid bearer token
 - `403`: Source IP not in `allowed_ips` or operation disabled by add-on permissions
-- `404`: Automation ID not found
+- `404`: Automation/Script ID not found
 - `422`: Invalid payload or invalid YAML structure
 - `429`: Write lock active (another write operation is in progress)
 - `500`: Internal failure (check add-on logs and HA logs for details)
@@ -371,7 +444,7 @@ This prevents:
 
 - Check the **Logs** tab in the add-on for error messages
 - Verify `home_assistant_url` is correct (default: `http://homeassistant:8123`)
-- Ensure `automations_file` path exists and is readable
+- Ensure `automations_file` and `scripts_file` paths exist and are readable
 
 ### Authentication Errors (401)
 
@@ -382,7 +455,7 @@ This prevents:
 ### Permission Errors (403)
 
 - If error mentions `allowed_ips`, add your client IP to the add-on `allowed_ips` list
-- Check add-on permission options (`allow_list`, `allow_read`, `allow_edit`, `allow_delete`)
+- Check add-on permission options (`allow_list`, `allow_read`, `allow_search`, `allow_edit`, `allow_delete`)
 - Ensure the requested operation is enabled
 
 ### Write Lock Errors (429)
@@ -393,8 +466,8 @@ This prevents:
 
 ### YAML Validation Errors (422)
 
-- Verify your automation payload is valid YAML
-- Check that required fields (like `id`) are present
+- Verify your automation/script payload is valid JSON and maps to valid YAML
+- Check that required identifiers (`:id` in URL) are correct
 - Review add-on logs for specific validation error messages
 
 ### Backup Restoration

@@ -1,11 +1,11 @@
 ---
 name: ha-automation-api
-description: Call the HA Automation REST API to list, read, edit, or delete Home Assistant automations. Use when integrating with Home Assistant automations, building scripts that manage automations, or when the user mentions the HA Automation REST API add-on.
+description: Call the HA Automation REST API to list, read, edit, or delete Home Assistant automations and scripts. Use when integrating with Home Assistant automations/scripts, building management scripts, or when the user mentions the HA Automation REST API add-on.
 ---
 
 # HA Automation REST API
 
-REST API for managing Home Assistant automations. Requires the [HA Automation REST API add-on](https://github.com/runshotgun/HA-Automation-API) installed in Home Assistant.
+REST API for managing Home Assistant automations and scripts. Requires the [HA Automation REST API add-on](https://github.com/runshotgun/HA-Automation-API) installed in Home Assistant.
 
 ## Quick Reference
 
@@ -18,6 +18,12 @@ REST API for managing Home Assistant automations. Requires the [HA Automation RE
 | `/automations/:id` | PUT | Replace automation (full replacement) |
 | `/automations/:id` | PATCH | Partially update automation (top-level merge) |
 | `/automations/:id` | DELETE | Delete automation |
+| `/scripts` | GET | List scripts (metadata only) |
+| `/scripts/search` | GET | Search scripts metadata (same shape as `/scripts`) |
+| `/scripts/:id` | GET | Read one script |
+| `/scripts/:id` | PUT | Replace script (full replacement of script body) |
+| `/scripts/:id` | PATCH | Partially update script (top-level merge) |
+| `/scripts/:id` | DELETE | Delete script |
 
 ## Authentication
 
@@ -106,13 +112,25 @@ Authorization: Bearer <TOKEN>
 
 Response: `{ "deleted": true, "automation": {...} }`
 
+### Scripts API parity
+
+Scripts endpoints mirror automations (`/scripts`, `/scripts/search`, `/scripts/:id` with `GET`/`PUT`/`PATCH`/`DELETE`) and keep the same auth, permissions, and error model.
+
+Important behavior:
+
+- `scripts.yaml` is treated as a mapping object; top-level script key is the `:id`.
+- `PUT` replaces that key's script body; `PATCH` merges top-level fields.
+- Payload can be wrapped (`{ "script": { ... } }`) or direct object.
+- List/search response shape is `{ "count": N, "scripts": [...] }`.
+- Read/write response shape is `{ "script": {...} }`; delete returns `{ "deleted": true, "script": {...} }`.
+
 ## Error Handling
 
 | Code | Meaning |
 |------|---------|
 | 401 | Missing or invalid token |
 | 403 | IP not in `allowed_ips` whitelist, or operation disabled by add-on config |
-| 404 | Automation ID not found |
+| 404 | Automation or Script ID not found |
 | 422 | Invalid YAML or payload |
 | 429 | Write lock active (retry after current PUT/PATCH/DELETE completes) |
 | 500 | Internal error |
@@ -124,6 +142,7 @@ Error body: `{ "error": "message", "details": {...} }`
 - **IP whitelist**: Add-on option `allowed_ips` must include caller IP. Empty list = no access.
 - **Permissions**: Add-on options `allow_list`, `allow_read`, `allow_search`, `allow_edit` (`PUT` + `PATCH`), `allow_delete` gate each operation.
 - **Concurrency**: Only one PUT, PATCH, or DELETE at a time. Second write returns 429.
+- **File paths**: `automations_file` controls `/automations`; `scripts_file` controls `/scripts`.
 
 ## Example (curl)
 
