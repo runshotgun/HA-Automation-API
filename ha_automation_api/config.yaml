@@ -1,7 +1,7 @@
 name: HA Automation REST API
-version: "0.1.4"
+version: "0.1.5"
 slug: ha_automation_api
-description: Expose Home Assistant automations through a secure REST API.
+description: Expose Home Assistant automations and scripts through a secure REST API.
 url: "https://github.com/kevenmenard/ha-automation-api-addon/tree/main/ha_automation_api"
 arch:
   - aarch64
@@ -24,6 +24,7 @@ options:
   allow_delete: false
   allowed_ips: []
   automations_file: /config/automations.yaml
+  scripts_file: /config/scripts.yaml
   backup_keep: 10
   home_assistant_url: http://homeassistant:8123
 schema:
@@ -35,5 +36,6 @@ schema:
   allowed_ips:
     - str
   automations_file: str
+  scripts_file: str
   backup_keep: int(1,100)
   home_assistant_url: str
