@@ -31,42 +31,31 @@ function persistOptions(nextOptions) {
   }
 }
 
-function loadOptions() {
-  let fileOptions = {};
-
+function readOptionsFile() {
   try {
     if (fs.existsSync(OPTIONS_PATH)) {
       const raw = fs.readFileSync(OPTIONS_PATH, "utf8");
-      fileOptions = JSON.parse(raw);
+      return JSON.parse(raw);
     }
   } catch (error) {
     console.error("Failed to parse /data/options.json, using defaults.", error.message);
   }
+  return {};
+}
 
+function normalizeOptions(sourceOptions = {}) {
   const options = {
     ...DEFAULT_OPTIONS,
-    ...fileOptions,
+    ...sourceOptions,
   };
 
   options.api_key = String(options.api_key || "").trim();
   options.regenerate_api_key = Boolean(options.regenerate_api_key);
-
-  const shouldGenerateApiKey = options.regenerate_api_key || !options.api_key;
-  if (shouldGenerateApiKey) {
-    options.api_key = generateApiKey();
-    options.regenerate_api_key = false;
-
-    const optionsToPersist = {
-      ...fileOptions,
-      ...options,
-    };
-    const persisted = persistOptions(optionsToPersist);
-    if (persisted) {
-      console.log(`Generated API key: ${options.api_key}`);
-    } else {
-      console.warn("Using in-memory generated API key for this session only.");
-    }
-  }
+  options.allow_list = Boolean(options.allow_list);
+  options.allow_read = Boolean(options.allow_read);
+  options.allow_search = Boolean(options.allow_search);
+  options.allow_edit = Boolean(options.allow_edit);
+  options.allow_delete = Boolean(options.allow_delete);
 
   options.backup_keep = Number(options.backup_keep) || DEFAULT_OPTIONS.backup_keep;
   if (options.backup_keep < 1) {
@@ -84,6 +73,78 @@ function loadOptions() {
   return options;
 }
 
+function readOptionsMtimeMs() {
+  try {
+    if (fs.existsSync(OPTIONS_PATH)) {
+      return fs.statSync(OPTIONS_PATH).mtimeMs;
+    }
+  } catch (error) {
+    console.error("Failed to read options file metadata.", error.message);
+  }
+  return null;
+}
+
+function createOptionsStore() {
+  let currentOptions = normalizeOptions();
+  let loaded = false;
+  let lastMtimeMs = null;
+
+  function refreshOptions(force = false) {
+    const currentMtimeMs = readOptionsMtimeMs();
+    if (!force && loaded && currentMtimeMs === lastMtimeMs) {
+      return currentOptions;
+    }
+
+    const fileOptions = readOptionsFile();
+    const nextOptions = normalizeOptions(fileOptions);
+
+    const shouldGenerateApiKey = nextOptions.regenerate_api_key || !nextOptions.api_key;
+    if (shouldGenerateApiKey) {
+      nextOptions.api_key = generateApiKey();
+      nextOptions.regenerate_api_key = false;
+
+      const optionsToPersist = {
+        ...fileOptions,
+        ...nextOptions,
+      };
+      const persisted = persistOptions(optionsToPersist);
+      if (persisted) {
+        console.log(`Generated API key: ${nextOptions.api_key}`);
+      } else {
+        console.warn("Using in-memory generated API key for this session only.");
+      }
+    }
+
+    currentOptions = nextOptions;
+    loaded = true;
+    lastMtimeMs = readOptionsMtimeMs();
+    return currentOptions;
+  }
+
+  refreshOptions(true);
+  const pollTimer = setInterval(() => {
+    refreshOptions(false);
+  }, 2000);
+  if (typeof pollTimer.unref === "function") {
+    pollTimer.unref();
+  }
+
+  return {
+    getOptions() {
+      return refreshOptions(false);
+    },
+    refreshOptions() {
+      return refreshOptions(true);
+    },
+  };
+}
+
+function loadOptions() {
+  const optionsStore = createOptionsStore();
+  return optionsStore.getOptions();
+}
+
 module.exports = {
+  createOptionsStore,
   loadOptions,
 };

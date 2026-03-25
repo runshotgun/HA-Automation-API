@@ -29,13 +29,22 @@ function timingSafeEqual(left, right) {
   return crypto.timingSafeEqual(leftBuffer, rightBuffer);
 }
 
-function createApiKeyManagedAuthMiddleware(options) {
-  const configuredApiKey = String(options.api_key || "").trim();
+function resolveOptions(optionsSource) {
+  if (optionsSource && typeof optionsSource.getOptions === "function") {
+    return optionsSource.getOptions();
+  }
+  return optionsSource || {};
+}
+
+function createApiKeyManagedAuthMiddleware(optionsSource) {
   const supervisorToken = String(process.env.SUPERVISOR_TOKEN || "").trim();
   const supervisorCoreUrl = String(process.env.SUPERVISOR_CORE_URL || DEFAULT_SUPERVISOR_CORE_URL).replace(/\/$/, "");
 
   return function apiKeyManagedAuthMiddleware(req, _res, next) {
     try {
+      const options = resolveOptions(optionsSource);
+      const configuredApiKey = String(options.api_key || "").trim();
+
       if (!configuredApiKey) {
         throw new ApiError(500, "Add-on misconfiguration: api_key is required.");
       }
@@ -64,8 +73,8 @@ function createApiKeyManagedAuthMiddleware(options) {
   };
 }
 
-function createAuthMiddleware(options) {
-  return createApiKeyManagedAuthMiddleware(options);
+function createAuthMiddleware(optionsSource) {
+  return createApiKeyManagedAuthMiddleware(optionsSource);
 }
 
 module.exports = {

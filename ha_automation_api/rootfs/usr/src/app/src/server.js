@@ -1,5 +1,5 @@
 const express = require("express");
-const { loadOptions } = require("./config");
+const { createOptionsStore } = require("./config");
 const { ApiError } = require("./errors");
 const { createAuthMiddleware } = require("./middleware/auth");
 const { createIpWhitelistMiddleware } = require("./middleware/ipWhitelist");
@@ -11,17 +11,18 @@ const { createScriptFileService } = require("./services/scriptFileService");
 const { createAutomationsRouter } = require("./routes/automations");
 const { createScriptsRouter } = require("./routes/scripts");
 
-const options = loadOptions();
+const optionsStore = createOptionsStore();
+const options = optionsStore.getOptions();
 const app = express();
 const port = Number(process.env.PORT || 8099);
 
 const reloadService = createReloadService();
 const fileService = createAutomationFileService(options, reloadService);
 const scriptFileService = createScriptFileService(options, reloadService);
-const requirePermission = createPermissionMiddleware(options);
+const requirePermission = createPermissionMiddleware(optionsStore);
 const writeLock = createWriteLockMiddleware();
-const ipWhitelist = createIpWhitelistMiddleware(options);
-const auth = createAuthMiddleware(options);
+const ipWhitelist = createIpWhitelistMiddleware(optionsStore);
+const auth = createAuthMiddleware(optionsStore);
 
 app.use(express.json({ limit: "2mb" }));
 

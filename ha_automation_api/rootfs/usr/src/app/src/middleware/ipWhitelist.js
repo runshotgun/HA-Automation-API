@@ -37,11 +37,18 @@ function extractClientIp(req) {
   return normalizeIp(req.ip || req.socket?.remoteAddress || "");
 }
 
-function createIpWhitelistMiddleware(options) {
-  const allowedIps = Array.isArray(options.allowed_ips) ? options.allowed_ips.map(normalizeIp).filter(Boolean) : [];
-  const allowedSet = new Set(allowedIps);
+function resolveOptions(optionsSource) {
+  if (optionsSource && typeof optionsSource.getOptions === "function") {
+    return optionsSource.getOptions();
+  }
+  return optionsSource || {};
+}
 
+function createIpWhitelistMiddleware(optionsSource) {
   return function ipWhitelistMiddleware(req, _res, next) {
+    const options = resolveOptions(optionsSource);
+    const allowedIps = Array.isArray(options.allowed_ips) ? options.allowed_ips.map(normalizeIp).filter(Boolean) : [];
+    const allowedSet = new Set(allowedIps);
     const sourceIp = extractClientIp(req);
     if (allowedSet.has(sourceIp)) {
       return next();
