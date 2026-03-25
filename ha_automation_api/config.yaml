@@ -1,5 +1,5 @@
 name: HA Automation REST API
-version: "0.1.11"
+version: "0.1.12"
 slug: ha_automation_api
 description: Expose Home Assistant automations and scripts through a secure REST API.
 url: "https://github.com/runshotgun/HA-Automation-API"
@@ -28,7 +28,7 @@ options:
   scripts_file: /config/scripts.yaml
   backup_keep: 10
 schema:
-  api_key: password
+  api_key: str
   allow_list: bool
   allow_read: bool
   allow_search: bool

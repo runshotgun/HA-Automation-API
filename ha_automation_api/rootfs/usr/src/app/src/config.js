@@ -1,7 +1,9 @@
 const fs = require("fs");
 const crypto = require("crypto");
+const fetch = require("node-fetch");
 
 const OPTIONS_PATH = "/data/options.json";
+const DEFAULT_SUPERVISOR_URL = "http://supervisor";
 
 const DEFAULT_OPTIONS = {
   api_key: "",
@@ -21,12 +23,48 @@ function generateApiKey() {
 }
 
 function persistOptions(nextOptions) {
+  const persisted = persistOptionsFile(nextOptions);
+  void persistOptionsSupervisor(nextOptions);
+  return persisted;
+}
+
+function persistOptionsFile(nextOptions) {
   try {
     fs.writeFileSync(OPTIONS_PATH, JSON.stringify(nextOptions, null, 2), "utf8");
     return true;
   } catch (error) {
     console.error("Failed to persist generated API key to /data/options.json.", error.message);
     return false;
+  }
+}
+
+async function persistOptionsSupervisor(nextOptions) {
+  const supervisorToken = String(process.env.SUPERVISOR_TOKEN || "").trim();
+  if (!supervisorToken) {
+    return;
+  }
+
+  const supervisorBaseUrl = String(process.env.SUPERVISOR_URL || DEFAULT_SUPERVISOR_URL).replace(/\/$/, "");
+  const endpoint = `${supervisorBaseUrl}/addons/self/options`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${supervisorToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        options: nextOptions,
+      }),
+      timeout: 5000,
+    });
+
+    if (!response.ok) {
+      console.warn(`Failed to sync generated API key to Supervisor options (HTTP ${response.status}).`);
+    }
+  } catch (error) {
+    console.warn("Failed to sync generated API key to Supervisor options.", error.message);
   }
 }
 

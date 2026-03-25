@@ -44,7 +44,7 @@ If this list is empty, authenticated API calls are blocked with `403`.
 
 | Setting | What to choose | Why it matters |
 | --- | --- | --- |
-| API key | Set manually, or let generator create one | Your app sends this on every request (`X-API-Key` or bearer) |
+| API key | Set manually, or leave blank for auto-generation | Your app sends this on every request (`X-API-Key` or bearer); generated keys are saved automatically |
 | Allow listing | On | Lets clients list automations and scripts |
 | Allow reading | On | Lets clients read one automation/script by ID |
 | Allow searching | On | Lets clients search automations/scripts |
