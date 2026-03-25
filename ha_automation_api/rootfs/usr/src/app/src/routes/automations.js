@@ -35,7 +35,7 @@ function createAutomationsRouter(deps) {
   router.put("/:id", requirePermission("edit"), writeLock, async (req, res, next) => {
     try {
       const payload = parseAutomationPayload(req.body);
-      const automation = await fileService.updateAutomation(req.params.id, payload, req.haToken);
+      const automation = await fileService.updateAutomation(req.params.id, payload, req.haAuth);
       return res.status(200).json({ automation });
     } catch (error) {
       return next(error);
@@ -49,7 +49,7 @@ function createAutomationsRouter(deps) {
   router.patch("/:id", requirePermission("edit"), writeLock, async (req, res, next) => {
     try {
       const payload = parseAutomationPayload(req.body);
-      const automation = await fileService.patchAutomation(req.params.id, payload, req.haToken);
+      const automation = await fileService.patchAutomation(req.params.id, payload, req.haAuth);
       return res.status(200).json({ automation });
     } catch (error) {
       return next(error);
@@ -62,7 +62,7 @@ function createAutomationsRouter(deps) {
 
   router.delete("/:id", requirePermission("delete"), writeLock, async (req, res, next) => {
     try {
-      const removed = await fileService.deleteAutomation(req.params.id, req.haToken);
+      const removed = await fileService.deleteAutomation(req.params.id, req.haAuth);
       return res.status(200).json({ deleted: true, automation: removed });
     } catch (error) {
       return next(error);

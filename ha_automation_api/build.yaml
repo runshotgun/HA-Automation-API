@@ -5,5 +5,5 @@ build_from:
 labels:
   org.opencontainers.image.title: "Home Assistant Add-on: HA Automation API"
   org.opencontainers.image.description: "Manage Home Assistant automations over a secured REST API."
-  org.opencontainers.image.source: "https://github.com/kevenmenard/ha-automation-api-addon"
+  org.opencontainers.image.source: "https://github.com/runshotgun/HA-Automation-API"
   org.opencontainers.image.licenses: "MIT"

@@ -1,119 +1,73 @@
 # HA Automation REST API Add-on
 
-This repository contains a Home Assistant add-on that exposes automation and script management through a REST API.
+This Home Assistant add-on exposes your `automations.yaml` and `scripts.yaml` through a secure REST API so external tools can manage them safely.
 
-## What It Does
+It is designed for integrations such as OpenClaw, custom control panels, internal tooling, and automation pipelines that need to read, search, or update Home Assistant automations/scripts over HTTP.
 
-The add-on provides these endpoints:
+## What This Add-on Enables
 
-- `GET /health`
-- `GET /automations`
-- `GET /automations/search`
-- `GET /automations/:id`
-- `PUT /automations/:id`
-- `PATCH /automations/:id`
-- `DELETE /automations/:id`
-- `GET /scripts`
-- `GET /scripts/search`
-- `GET /scripts/:id`
-- `PUT /scripts/:id`
-- `PATCH /scripts/:id`
-- `DELETE /scripts/:id`
+- **Read access** to automations and scripts (`list`, `search`, `read`)
+- **Write access** when enabled (`edit`, `delete`)
+- **Secure access controls** with:
+  - API key authentication with Supervisor-managed Home Assistant auth
+  - source IP allowlist enforcement
+  - per-operation permission toggles
+- **Safe file updates** with validation, backups, restore-on-failure, and Home Assistant reload calls
+- **Write locking** so only one write operation runs at a time
 
-### Core Features
+## Install (Step by Step)
 
-- **Long-lived token authentication**: Uses Home Assistant long-lived access tokens for every API call
-- **Token validation**: Validates caller tokens against Home Assistant `/api/`
-- **IP allowlist enforcement**: Requests are allowed only when source IP matches `allowed_ips`
-- **Permission locks**: Per-operation permission controls (`list`, `read`, `search`, `edit`, `delete`) via add-on options
-- **Safe write operations**: 
-  - Validates YAML before touching disk
-  - Writes to temp copy first
-  - Validates temp copy after writing
-  - Creates timestamped backups
-  - Deletes old file, then renames temp file atomically
-  - Reloads automations/scripts through Home Assistant API
-  - Restores from backup if reload/write fails
-- **Concurrency control**: Only one mutating request (`PUT`/`PATCH`/`DELETE`) at a time; concurrent writes return `429`
+### 1) Add This Repository to Home Assistant
 
-## Add This Add-on To Home Assistant
+1. Open Home Assistant.
+2. Go to **Settings -> Add-ons -> Add-on Store**.
+3. Open the menu (top-right) and click **Repositories**.
+4. Add:
 
-### 1) Add the Repository
-
-1. Open Home Assistant
-2. Go to **Settings -> Add-ons -> Add-on Store**
-3. Open the menu (top-right) and click **Repositories**
-4. Add this URL:
-
-```
+```text
 https://github.com/runshotgun/HA-Automation-API
 ```
 
-5. Refresh add-ons
+5. Refresh add-ons.
 
-### 2) Install and Start
+### 2) Install the Add-on
 
-1. Open the **HA Automation REST API** add-on
-2. Click **Install**
-3. In the add-on **Configuration** tab, use the generated option fields/lists (see example below)
-4. Click **Start**
-5. Check **Logs** for startup success
+1. Open **HA Automation REST API**.
+2. Click **Install**.
 
-## Add-on Configuration
+### 3) Configure the Add-on
 
-Example configuration:
+In the add-on **Configuration** tab, set these values:
 
-```yaml
-allow_list: true
-allow_read: true
-allow_search: true
-allow_edit: false
-allow_delete: false
-allowed_ips: []
-automations_file: /config/automations.yaml
-scripts_file: /config/scripts.yaml
-backup_keep: 10
-home_assistant_url: http://homeassistant:8123
+**Important:** Allowed IP addresses are mandatory for real use.  
+If this list is empty, authenticated API calls are blocked with `403`.
+
+| Setting | What to choose | Why it matters |
+| --- | --- | --- |
+| API key | Set manually, or let generator create one | Your app sends this on every request (`X-API-Key` or bearer) |
+| Regenerate API key on next start | Turn on when you want a new key (refresh), then restart add-on | Generates a new key, prints it once in logs, and auto-resets to off |
+| Allow listing | On | Lets clients list automations and scripts |
+| Allow reading | On | Lets clients read one automation/script by ID |
+| Allow searching | On | Lets clients search automations/scripts |
+| Allow editing | On only if needed | Required for updates (`PUT`/`PATCH`) |
+| Allow deleting | On only if needed | Required for deletes (`DELETE`) |
+| Allowed IP addresses | Add all trusted client IPs (example: `192.168.1.25`) | Blocks unknown callers even with valid credentials |
+| Automations file path | Usually `/config/automations.yaml` | Source file used for automation operations |
+| Scripts file path | Usually `/config/scripts.yaml` | Source file used for script operations |
+| Backups to keep | `10` recommended | Controls how many rollback backups are retained |
+
+### 4) Start and Verify
+
+1. Click **Start**.
+2. Open the add-on **Logs** and confirm startup succeeds.
+3. Check health endpoint:
+
+```bash
+curl http://homeassistant.local:8099/health
 ```
 
-### Configuration Options
+Expected:
 
-- `allow_list`: Enable `GET /automations` and `GET /scripts` (list metadata)
-- `allow_read`: Enable `GET /automations/:id` and `GET /scripts/:id` (read one object)
-- `allow_search`: Enable `GET /automations/search` and `GET /scripts/search` (search metadata)
-- `allow_edit`: Enable `PUT`/`PATCH` for `/automations/:id` and `/scripts/:id`
-- `allow_delete`: Enable `DELETE` for `/automations/:id` and `/scripts/:id`
-- `allowed_ips`: Whitelist of client source IPs allowed to call the API. Default `[]` (enabled, no IPs allowed until configured).
-- `automations_file`: Path to the automation YAML file (default `/config/automations.yaml`)
-- `scripts_file`: Path to the scripts YAML file (default `/config/scripts.yaml`)
-- `backup_keep`: Number of timestamped backups to keep (default `10`)
-- `home_assistant_url`: Home Assistant URL used for token validation and automation/script reload calls
-
-## Authentication
-
-All endpoints require a Home Assistant long-lived access token:
-
-```
-Authorization: Bearer <YOUR_LONG_LIVED_TOKEN>
-```
-
-### Creating a Long-Lived Token
-
-1. In Home Assistant, click your profile avatar (bottom-left in sidebar)
-2. Scroll to **Long-Lived Access Tokens**
-3. Click **Create Token**
-4. Give it a name (e.g., "Automation API")
-5. Copy the token and store it securely
-
-The token is validated by calling Home Assistant `/api/` before any endpoint logic executes.
-
-## API Endpoints
-
-### `GET /health`
-
-Health check endpoint (no authentication required).
-
-**Response:**
 ```json
 {
   "status": "ok",
@@ -121,124 +75,25 @@ Health check endpoint (no authentication required).
 }
 ```
 
-### `GET /automations`
+## Use It
 
-List automation metadata and exclude automation content fields (same behavior as `GET /automations/search`).
+For request examples and integration patterns, use the skill guide:
 
-Excluded fields:
+- [`HA Automation API Skill`](.agents/skills/ha-automation-api/SKILL.md)
 
-- `trigger`, `condition`, `action`
-- `triggers`, `conditions`, `actions`
-- `sequence`
+The skill guide includes:
 
-All other top-level fields are returned as-is. The response also guarantees normalized `name`, `visible`, and `enabled` fields.
+- authentication header format (`X-API-Key` or bearer with your app API key)
+- list/search/read/update/delete request patterns
+- Node.js and Python examples
+- common error handling guidance
 
-Supported query params:
+## Payload Rules for Writes
 
-- `q`: text search across metadata fields
-- `id`, `name`, `area`, `floor`, `label`, `entity_id`, `icon`: field-specific contains filters
-- `visible`, `enabled`: boolean filters (`true`/`false`, also accepts `1`/`0`, `on`/`off`)
+For both automations and scripts, `PUT` and `PATCH` accept either:
 
-**Response:**
-```json
-{
-  "count": 2,
-  "automations": [
-    {
-      "id": "1673577999532",
-      "alias": "Bedroom Shades",
-      ...
-    },
-    ...
-  ]
-}
-```
+1. Wrapped payload:
 
-### `GET /automations/search`
-
-Search automations and return metadata-only automation objects (same response shape as `GET /automations`).
-
-Excluded fields:
-
-- `trigger`, `condition`, `action`
-- `triggers`, `conditions`, `actions`
-- `sequence`
-
-All other top-level fields are returned as-is. The response also guarantees normalized `name`, `visible`, and `enabled` fields.
-
-Supported query params:
-
-- `q`: text search across metadata fields
-- `id`, `name`, `area`, `floor`, `label`, `entity_id`, `icon`: field-specific contains filters
-- `visible`, `enabled`: boolean filters (`true`/`false`, also accepts `1`/`0`, `on`/`off`)
-
-**Response:**
-```json
-{
-  "count": 2,
-  "automations": [
-    {
-      "id": "1673577999532",
-      "alias": "Bedroom Shades",
-      "name": "Bedroom Shades",
-      "area": "Bedroom",
-      "floor": "Second",
-      "label": "Climate",
-      "entity_id": "automation.bedroom_shades",
-      "icon": "mdi:blinds",
-      "mode": "single",
-      "visible": true,
-      "enabled": true
-    }
-  ]
-}
-```
-
-### `GET /automations/:id`
-
-Read a specific automation by ID.
-
-**Response:**
-```json
-{
-  "automation": {
-    "id": "1673577999532",
-    "alias": "Bedroom Shades",
-    ...
-  }
-}
-```
-
-### `PUT /automations/:id`
-
-Replace an automation (full replacement). You can send either:
-
-**Option 1:** Wrapped in `automation` key:
-```json
-{
-  "automation": {
-    "alias": "Updated alias",
-    "description": "Updated by API"
-  }
-}
-```
-
-**Option 2:** Direct automation object (if `automation` key is omitted, the request body itself is treated as the automation object):
-```json
-{
-  "alias": "Updated alias",
-  "description": "Updated by API"
-}
-```
-
-`PUT` replaces the stored automation object with the payload (and forces `id` to match `:id`).
-Fields omitted from the payload are removed from the automation.
-
-### `PATCH /automations/:id`
-
-Partially update an automation (top-level merge). You can send either:
-
-**Option 1:** Wrapped in `automation` key:
 ```json
 {
   "automation": {
@@ -247,229 +102,92 @@ Partially update an automation (top-level merge). You can send either:
 }
 ```
 
-**Option 2:** Direct automation object:
+2. Direct object:
+
 ```json
 {
   "alias": "Updated alias"
 }
 ```
 
-`PATCH` merges top-level fields into the existing automation (and forces `id` to match `:id`).
-Nested structures like `trigger`, `condition`, and `action` are replaced as whole fields when provided.
+`PUT` replaces the object.  
+`PATCH` merges top-level fields.
 
-**Response:**
-```json
-{
-  "automation": {
-    "id": "1673577999532",
-    "alias": "Updated alias",
-    ...
-  }
-}
-```
+## Endpoint Reference
 
-### `DELETE /automations/:id`
+All endpoints except `/health` require authentication:
 
-Delete an automation by ID.
+- `X-API-Key: <YOUR_APP_API_KEY>` (or `Authorization: Bearer <YOUR_APP_API_KEY>`)
 
-**Response:**
-```json
-{
-  "deleted": true,
-  "automation": {
-    "id": "1673577999532",
-    "alias": "Bedroom Shades",
-    ...
-  }
-}
-```
+### Health
 
-### Scripts Endpoints (`/scripts`)
+- `GET /health` (no auth required)
 
-Scripts endpoints mirror automation behavior with the same auth, permissions, write lock, backup, and reload guarantees:
+### Automations
 
-- `GET /scripts`
-- `GET /scripts/search`
-- `GET /scripts/:id`
-- `PUT /scripts/:id`
-- `PATCH /scripts/:id`
-- `DELETE /scripts/:id`
+- `GET /automations` (requires **Allow listing**)
+- `GET /automations/search` (requires **Allow searching**)
+- `GET /automations/:id` (requires **Allow reading**)
+- `PUT /automations/:id` (requires **Allow editing**)
+- `PATCH /automations/:id` (requires **Allow editing**)
+- `DELETE /automations/:id` (requires **Allow deleting**)
 
-Key differences:
+### Scripts
 
-- `scripts.yaml` is treated as a mapping object (top-level key = script id used by `:id`).
-- Metadata list/search responses exclude `sequence` and include normalized `id`, `name`, `visible`, `enabled`.
-- `PUT`/`PATCH` accept wrapped payloads (`{ "script": { ... } }`) or direct objects, same as automations.
-- `PUT` replaces the script body at that key, `PATCH` merges top-level fields, and `DELETE` removes the key from `scripts.yaml`.
+- `GET /scripts` (requires **Allow listing**)
+- `GET /scripts/search` (requires **Allow searching**)
+- `GET /scripts/:id` (requires **Allow reading**)
+- `PUT /scripts/:id` (requires **Allow editing**)
+- `PATCH /scripts/:id` (requires **Allow editing**)
+- `DELETE /scripts/:id` (requires **Allow deleting**)
 
-**List/Search response:**
-```json
-{
-  "count": 1,
-  "scripts": [
-    {
-      "id": "lights_evening",
-      "alias": "Lights Evening",
-      "name": "Lights Evening",
-      "mode": "single",
-      "visible": true,
-      "enabled": true
-    }
-  ]
-}
-```
+## Safety and Concurrency
 
-**Read/Write response shape:**
-```json
-{
-  "script": {
-    "id": "lights_evening",
-    "alias": "Lights Evening",
-    "sequence": [
-      { "service": "light.turn_on", "target": { "entity_id": "light.kitchen" } }
-    ]
-  }
-}
-```
+For `PUT`, `PATCH`, and `DELETE`, the add-on:
 
-## Quick API Examples
+1. Validates YAML in memory.
+2. Writes to a temp file.
+3. Validates the temp file on disk.
+4. Creates timestamped backup(s).
+5. Atomically swaps file.
+6. Reloads automations/scripts via Home Assistant API.
+7. Restores backup automatically if something fails.
 
-### List Automations
-
-```bash
-curl -H "Authorization: Bearer <TOKEN>" \
-  http://homeassistant.local:8099/automations
-```
-
-### Read One Automation
-
-```bash
-curl -H "Authorization: Bearer <TOKEN>" \
-  http://homeassistant.local:8099/automations/1673577999532
-```
-
-### Search Automation Metadata
-
-```bash
-curl -H "Authorization: Bearer <TOKEN>" \
-  "http://homeassistant.local:8099/automations/search?q=bedroom&enabled=true"
-```
-
-### Update One Automation
-
-```bash
-curl -X PUT \
-  -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"automation":{"id":"1673577999532","alias":"Bedroom Shades Updated","trigger":[...],"condition":[],"action":[...]}}' \
-  http://homeassistant.local:8099/automations/1673577999532
-```
-
-### Patch One Automation
-
-```bash
-curl -X PATCH \
-  -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"automation":{"alias":"Bedroom Shades Updated"}}' \
-  http://homeassistant.local:8099/automations/1673577999532
-```
-
-### Delete One Automation
-
-```bash
-curl -X DELETE \
-  -H "Authorization: Bearer <TOKEN>" \
-  http://homeassistant.local:8099/automations/1673577999532
-```
-
-### List Scripts
-
-```bash
-curl -H "Authorization: Bearer <TOKEN>" \
-  http://homeassistant.local:8099/scripts
-```
-
-### Patch One Script
-
-```bash
-curl -X PATCH \
-  -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"script":{"alias":"Evening Lights Updated"}}' \
-  http://homeassistant.local:8099/scripts/lights_evening
-```
-
-## Write Safety Flow
-
-For edit/delete operations, the add-on follows this safety flow:
-
-1. Load and validate the full YAML structure
-2. Build updated automation/script data in memory
-3. Write updated data to a temp file (`<target>.new`)
-4. Re-read and validate temp file to ensure it's valid on disk
-5. Create a timestamped backup (`<target>.bak.<timestamp>`)
-6. Delete current target file
-7. Rename temp file to target file
-8. Reload automations/scripts through Home Assistant API
-9. On failure, restore from backup and report error
-
-This ensures that:
-- Invalid YAML never replaces the live file
-- Backups are created before any changes
-- The file swap is atomic (delete + rename)
-- Failed operations automatically restore from backup
-
-## Concurrency Model
-
-Only one `PUT`, `PATCH`, or `DELETE` request can run at a time. If another write operation is already in progress, the add-on responds with `HTTP 429 Too Many Requests`.
-
-This prevents:
-- Race conditions when multiple clients update automations simultaneously
-- Corrupted YAML files from concurrent writes
-- Backup/revert conflicts
+Only one write request runs at a time.  
+Concurrent write requests return `429 Too Many Requests`.
 
 ## Error Codes
 
-- `401`: Missing or invalid bearer token
-- `403`: Source IP not in `allowed_ips` or operation disabled by add-on permissions
-- `404`: Automation/Script ID not found
-- `422`: Invalid payload or invalid YAML structure
-- `429`: Write lock active (another write operation is in progress)
-- `500`: Internal failure (check add-on logs and HA logs for details)
+- `401` missing/invalid API key
+- `403` IP not allowlisted or permission disabled
+- `404` automation/script ID not found
+- `422` invalid payload/YAML structure
+- `429` another write is in progress
+- `500` internal failure (check add-on logs)
 
 ## Troubleshooting
 
-### Add-on Won't Start
+### 403 Errors
 
-- Check the **Logs** tab in the add-on for error messages
-- Verify `home_assistant_url` is correct (default: `http://homeassistant:8123`)
-- Ensure `automations_file` and `scripts_file` paths exist and are readable
+- Confirm your client IP is in the **Allowed IP addresses** list.
+- Confirm the needed permission setting is enabled (listing, reading, searching, editing, or deleting).
 
-### Authentication Errors (401)
+### 401 Errors
 
-- Verify your long-lived token is correct
-- Check that the token hasn't been revoked in Home Assistant
-- Ensure `home_assistant_url` is reachable from the add-on container
+- Verify your app sends the correct API key (`X-API-Key` or bearer).
 
-### Permission Errors (403)
+### 422 Errors
 
-- If error mentions `allowed_ips`, add your client IP to the add-on `allowed_ips` list
-- Check add-on permission options (`allow_list`, `allow_read`, `allow_search`, `allow_edit`, `allow_delete`)
-- Ensure the requested operation is enabled
+- Validate request JSON.
+- Confirm URL `:id` matches your target object.
 
-### Write Lock Errors (429)
+### 429 Errors
 
-- Wait for the current write operation to complete
-- Check add-on logs to see what operation is running
-- Only one `PUT`, `PATCH`, or `DELETE` can run at a time
+- Wait for current write operation to finish.
+- Retry once lock is released.
 
-### YAML Validation Errors (422)
+### 500 Errors
 
-- Verify your automation/script payload is valid JSON and maps to valid YAML
-- Check that required identifiers (`:id` in URL) are correct
-- Review add-on logs for specific validation error messages
-
-### Backup Restoration
-
-If a write operation fails, the add-on automatically restores from the most recent backup. Check the add-on logs for details about what failed and which backup was restored.
+- Confirm **API key** is set in add-on configuration.
+- If needed, use **Regenerate API key on next start** and restart the add-on.
+- Confirm the add-on is running with Home Assistant API access enabled.

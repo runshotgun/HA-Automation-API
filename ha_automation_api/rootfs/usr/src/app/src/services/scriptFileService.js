@@ -72,7 +72,7 @@ function createScriptFileService(options, reloadService) {
     entitiesName: "scripts",
     entitiesFilePath: options.scripts_file,
     backupKeep: options.backup_keep,
-    reloadEntities: (token) => reloadService.reloadScripts(token),
+    reloadEntities: (authContext) => reloadService.reloadScripts(authContext),
     parseRoot: parseScriptsRoot,
     adapter: {
       getById(scriptsRoot, normalizedId) {
@@ -126,16 +126,16 @@ function createScriptFileService(options, reloadService) {
     return entityService.readEntityById(id);
   }
 
-  async function updateScript(id, incomingScript, token) {
-    return entityService.updateEntity(id, incomingScript, token);
+  async function updateScript(id, incomingScript, authContext) {
+    return entityService.updateEntity(id, incomingScript, authContext);
   }
 
-  async function patchScript(id, incomingScript, token) {
-    return entityService.patchEntity(id, incomingScript, token);
+  async function patchScript(id, incomingScript, authContext) {
+    return entityService.patchEntity(id, incomingScript, authContext);
   }
 
-  async function deleteScript(id, token) {
-    return entityService.deleteEntity(id, token);
+  async function deleteScript(id, authContext) {
+    return entityService.deleteEntity(id, authContext);
   }
 
   async function searchScriptMetadata(filters = {}) {

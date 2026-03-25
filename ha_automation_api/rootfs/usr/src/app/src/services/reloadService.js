@@ -3,10 +3,17 @@ const { ApiError } = require("../errors");
 
 const RELOAD_TIMEOUT_MS = 10000;
 
-function createReloadService(options) {
-  const baseUrl = String(options.home_assistant_url || "").replace(/\/$/, "");
+function createReloadService() {
+  async function callReloadService(pathname, authContext, errorMessage) {
+    const token = authContext?.token;
+    const baseUrl = String(authContext?.baseUrl || "").replace(/\/$/, "");
+    if (!token) {
+      throw new ApiError(500, "Reload auth token is not available.");
+    }
+    if (!baseUrl) {
+      throw new ApiError(500, "Reload base URL is not available.");
+    }
 
-  async function callReloadService(pathname, token, errorMessage) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), RELOAD_TIMEOUT_MS);
 
@@ -35,12 +42,12 @@ function createReloadService(options) {
     }
   }
 
-  async function reloadAutomations(token) {
-    return callReloadService("/api/services/automation/reload", token, "Automation reload failed.");
+  async function reloadAutomations(authContext) {
+    return callReloadService("/api/services/automation/reload", authContext, "Automation reload failed.");
   }
 
-  async function reloadScripts(token) {
-    return callReloadService("/api/services/script/reload", token, "Script reload failed.");
+  async function reloadScripts(authContext) {
+    return callReloadService("/api/services/script/reload", authContext, "Script reload failed.");
   }
 
   return {

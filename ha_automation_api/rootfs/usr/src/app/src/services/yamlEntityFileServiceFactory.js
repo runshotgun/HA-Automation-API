@@ -39,7 +39,7 @@ function createYamlEntityFileService(options) {
     }
   }
 
-  async function writeWithSwapAndReload(nextRoot, token) {
+  async function writeWithSwapAndReload(nextRoot, authContext) {
     const tempPath = `${entitiesFilePath}.new`;
     const yamlOutput = yaml.dump(nextRoot, {
       lineWidth: 0,
@@ -68,7 +68,7 @@ function createYamlEntityFileService(options) {
       await fs.rename(tempPath, entitiesFilePath);
       swapped = true;
 
-      await reloadEntities(token);
+      await reloadEntities(authContext);
       await rotateBackups(entitiesFilePath, backupKeep);
     } catch (error) {
       const shouldRestore = Boolean(backupPath) && (swapped || oldDeleted);
@@ -111,7 +111,7 @@ function createYamlEntityFileService(options) {
     return entity;
   }
 
-  async function updateEntity(id, incomingEntity, token) {
+  async function updateEntity(id, incomingEntity, authContext) {
     validateIncomingEntity(incomingEntity);
 
     const normalizedId = String(id);
@@ -122,11 +122,11 @@ function createYamlEntityFileService(options) {
     }
 
     const { nextRoot, entity } = adapter.put(root, normalizedId, incomingEntity, currentEntity);
-    await writeWithSwapAndReload(nextRoot, token);
+    await writeWithSwapAndReload(nextRoot, authContext);
     return entity;
   }
 
-  async function patchEntity(id, incomingEntity, token) {
+  async function patchEntity(id, incomingEntity, authContext) {
     validateIncomingEntity(incomingEntity);
 
     const normalizedId = String(id);
@@ -137,11 +137,11 @@ function createYamlEntityFileService(options) {
     }
 
     const { nextRoot, entity } = adapter.patch(root, normalizedId, incomingEntity, currentEntity);
-    await writeWithSwapAndReload(nextRoot, token);
+    await writeWithSwapAndReload(nextRoot, authContext);
     return entity;
   }
 
-  async function deleteEntity(id, token) {
+  async function deleteEntity(id, authContext) {
     const normalizedId = String(id);
     const root = await readRoot();
     const currentEntity = adapter.getById(root, normalizedId);
@@ -150,7 +150,7 @@ function createYamlEntityFileService(options) {
     }
 
     const { nextRoot, entity } = adapter.remove(root, normalizedId, currentEntity);
-    await writeWithSwapAndReload(nextRoot, token);
+    await writeWithSwapAndReload(nextRoot, authContext);
     return entity;
   }
 

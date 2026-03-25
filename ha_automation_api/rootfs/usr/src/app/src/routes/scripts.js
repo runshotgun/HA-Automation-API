@@ -35,7 +35,7 @@ function createScriptsRouter(deps) {
   router.put("/:id", requirePermission("edit"), writeLock, async (req, res, next) => {
     try {
       const payload = parseScriptPayload(req.body);
-      const script = await fileService.updateScript(req.params.id, payload, req.haToken);
+      const script = await fileService.updateScript(req.params.id, payload, req.haAuth);
       return res.status(200).json({ script });
     } catch (error) {
       return next(error);
@@ -49,7 +49,7 @@ function createScriptsRouter(deps) {
   router.patch("/:id", requirePermission("edit"), writeLock, async (req, res, next) => {
     try {
       const payload = parseScriptPayload(req.body);
-      const script = await fileService.patchScript(req.params.id, payload, req.haToken);
+      const script = await fileService.patchScript(req.params.id, payload, req.haAuth);
       return res.status(200).json({ script });
     } catch (error) {
       return next(error);
@@ -62,7 +62,7 @@ function createScriptsRouter(deps) {
 
   router.delete("/:id", requirePermission("delete"), writeLock, async (req, res, next) => {
     try {
-      const removed = await fileService.deleteScript(req.params.id, req.haToken);
+      const removed = await fileService.deleteScript(req.params.id, req.haAuth);
       return res.status(200).json({ deleted: true, script: removed });
     } catch (error) {
       return next(error);

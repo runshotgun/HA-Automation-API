@@ -30,10 +30,16 @@ REST API for managing Home Assistant automations and scripts. Requires the [HA A
 All endpoints except `/health` require:
 
 ```
-Authorization: Bearer <HOME_ASSISTANT_LONG_LIVED_TOKEN>
+X-API-Key: <YOUR_APP_API_KEY>
 ```
 
-Token is validated against Home Assistant `/api/`. Create tokens in HA: Profile → Long-Lived Access Tokens.
+Alternative supported format:
+
+```
+Authorization: Bearer <YOUR_APP_API_KEY>
+```
+
+The add-on validates your API key and handles Home Assistant auth internally via Supervisor-managed credentials.
 
 ## Base URL
 
@@ -45,7 +51,7 @@ Typically `http://homeassistant.local:8099` or `http://<ha-host>:8099`. Port 809
 
 ```http
 GET /automations
-Authorization: Bearer <TOKEN>
+X-API-Key: <API_KEY>
 ```
 
 Response: `{ "count": N, "automations": [...] }`
@@ -65,7 +71,7 @@ Supports filters via query params:
 
 ```http
 GET /automations/search?q=bedroom&enabled=true
-Authorization: Bearer <TOKEN>
+X-API-Key: <API_KEY>
 ```
 
 Returns the same metadata-only response shape as `GET /automations`, with the same supported filters.
@@ -74,7 +80,7 @@ Returns the same metadata-only response shape as `GET /automations`, with the sa
 
 ```http
 GET /automations/{id}
-Authorization: Bearer <TOKEN>
+X-API-Key: <API_KEY>
 ```
 
 Response: `{ "automation": { "id", "alias", "triggers", "actions", ... } }`
@@ -83,7 +89,7 @@ Response: `{ "automation": { "id", "alias", "triggers", "actions", ... } }`
 
 ```http
 PUT /automations/{id}
-Authorization: Bearer <TOKEN>
+X-API-Key: <API_KEY>
 Content-Type: application/json
 
 {"automation": {"id": "1673577999532", "alias": "New name", "trigger": [...], "condition": [], "action": [...]} }
@@ -95,7 +101,7 @@ Or send the automation object directly (without `automation` wrapper). `PUT` rep
 
 ```http
 PATCH /automations/{id}
-Authorization: Bearer <TOKEN>
+X-API-Key: <API_KEY>
 Content-Type: application/json
 
 {"automation": {"alias": "New name"}}
@@ -107,7 +113,7 @@ Or send the automation object directly. `PATCH` merges top-level fields only (ne
 
 ```http
 DELETE /automations/{id}
-Authorization: Bearer <TOKEN>
+X-API-Key: <API_KEY>
 ```
 
 Response: `{ "deleted": true, "automation": {...} }`
@@ -128,7 +134,7 @@ Important behavior:
 
 | Code | Meaning |
 |------|---------|
-| 401 | Missing or invalid token |
+| 401 | Missing or invalid API key |
 | 403 | IP not in `allowed_ips` whitelist, or operation disabled by add-on config |
 | 404 | Automation or Script ID not found |
 | 422 | Invalid YAML or payload |
@@ -140,6 +146,7 @@ Error body: `{ "error": "message", "details": {...} }`
 ## Constraints
 
 - **IP whitelist**: Add-on option `allowed_ips` must include caller IP. Empty list = no access.
+- **Authentication**: Send `X-API-Key` (or bearer with the same API key) on every request except `/health`.
 - **Permissions**: Add-on options `allow_list`, `allow_read`, `allow_search`, `allow_edit` (`PUT` + `PATCH`), `allow_delete` gate each operation.
 - **Concurrency**: Only one PUT, PATCH, or DELETE at a time. Second write returns 429.
 - **File paths**: `automations_file` controls `/automations`; `scripts_file` controls `/scripts`.
@@ -148,15 +155,15 @@ Error body: `{ "error": "message", "details": {...} }`
 
 ```bash
 # List
-curl -H "Authorization: Bearer $TOKEN" http://homeassistant.local:8099/automations
+curl -H "X-API-Key: $API_KEY" http://homeassistant.local:8099/automations
 
 # Update
-curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+curl -X PUT -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   -d '{"automation":{"id":"1673577999532","alias":"Updated","trigger":[...],"condition":[],"action":[...]}}' \
   http://homeassistant.local:8099/automations/1673577999532
 
 # Patch
-curl -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+curl -X PATCH -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   -d '{"automation":{"alias":"Updated"}}' \
   http://homeassistant.local:8099/automations/1673577999532
 ```
@@ -165,10 +172,10 @@ curl -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/js
 
 ```javascript
 const baseUrl = "http://homeassistant.local:8099";
-const token = process.env.HA_TOKEN;
+const apiKey = process.env.HA_API_KEY;
 
 const res = await fetch(`${baseUrl}/automations`, {
-  headers: { Authorization: `Bearer ${token}` },
+  headers: { "X-API-Key": apiKey },
 });
 const { automations } = await res.json();
 ```
@@ -180,8 +187,8 @@ import os
 import requests
 
 base_url = "http://homeassistant.local:8099"
-token = os.environ["HA_TOKEN"]
-headers = {"Authorization": f"Bearer {token}"}
+api_key = os.environ["HA_API_KEY"]
+headers = {"X-API-Key": api_key}
 
 r = requests.get(f"{base_url}/automations", headers=headers)
 data = r.json()

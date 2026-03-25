@@ -15,7 +15,7 @@ const options = loadOptions();
 const app = express();
 const port = Number(process.env.PORT || 8099);
 
-const reloadService = createReloadService(options);
+const reloadService = createReloadService();
 const fileService = createAutomationFileService(options, reloadService);
 const scriptFileService = createScriptFileService(options, reloadService);
 const requirePermission = createPermissionMiddleware(options);

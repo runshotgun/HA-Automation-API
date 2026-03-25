@@ -1,7 +1,7 @@
-const fetch = require("node-fetch");
+const crypto = require("crypto");
 const { ApiError } = require("../errors");
 
-const VALIDATION_TIMEOUT_MS = 7000;
+const DEFAULT_SUPERVISOR_CORE_URL = "http://supervisor/core";
 
 function getBearerToken(req) {
   const authHeader = req.headers.authorization || "";
@@ -12,43 +12,60 @@ function getBearerToken(req) {
   return token.trim();
 }
 
-function createAuthMiddleware(options) {
-  const baseUrl = String(options.home_assistant_url || "").replace(/\/$/, "");
+function getApiKey(req) {
+  const directApiKey = req.headers["x-api-key"];
+  if (typeof directApiKey === "string" && directApiKey.trim().length > 0) {
+    return directApiKey.trim();
+  }
+  return getBearerToken(req);
+}
 
-  return async function authMiddleware(req, _res, next) {
+function timingSafeEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left || ""));
+  const rightBuffer = Buffer.from(String(right || ""));
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function createApiKeyManagedAuthMiddleware(options) {
+  const configuredApiKey = String(options.api_key || "").trim();
+  const supervisorToken = String(process.env.SUPERVISOR_TOKEN || "").trim();
+  const supervisorCoreUrl = String(process.env.SUPERVISOR_CORE_URL || DEFAULT_SUPERVISOR_CORE_URL).replace(/\/$/, "");
+
+  return function apiKeyManagedAuthMiddleware(req, _res, next) {
     try {
-      const token = getBearerToken(req);
-      if (!token) {
-        throw new ApiError(401, "Missing or invalid Authorization header.");
+      if (!configuredApiKey) {
+        throw new ApiError(500, "Add-on misconfiguration: api_key is required.");
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), VALIDATION_TIMEOUT_MS);
-
-      let response;
-      try {
-        response = await fetch(`${baseUrl}/api/`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          signal: controller.signal,
-        });
-      } finally {
-        clearTimeout(timeout);
+      if (!supervisorToken) {
+        throw new ApiError(500, "Add-on misconfiguration: SUPERVISOR_TOKEN is not available.");
       }
 
-      if (!response.ok) {
-        throw new ApiError(401, "Token validation failed.");
+      const providedApiKey = getApiKey(req);
+      if (!providedApiKey) {
+        throw new ApiError(401, "Missing API key. Provide it using X-API-Key header or Authorization: Bearer <api_key>.");
       }
 
-      req.haToken = token;
+      if (!timingSafeEqual(providedApiKey, configuredApiKey)) {
+        throw new ApiError(401, "Invalid API key.");
+      }
+
+      req.haAuth = {
+        token: supervisorToken,
+        baseUrl: supervisorCoreUrl,
+      };
       return next();
     } catch (error) {
       return next(error);
     }
   };
+}
+
+function createAuthMiddleware(options) {
+  return createApiKeyManagedAuthMiddleware(options);
 }
 
 module.exports = {

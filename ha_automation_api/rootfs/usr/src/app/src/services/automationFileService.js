@@ -60,7 +60,7 @@ function createAutomationFileService(options, reloadService) {
     entitiesName: "automations",
     entitiesFilePath: options.automations_file,
     backupKeep: options.backup_keep,
-    reloadEntities: (token) => reloadService.reloadAutomations(token),
+    reloadEntities: (authContext) => reloadService.reloadAutomations(authContext),
     parseRoot: parseAutomationsRoot,
     adapter: {
       getById(automations, normalizedId) {
@@ -113,16 +113,16 @@ function createAutomationFileService(options, reloadService) {
     return entityService.readEntityById(id);
   }
 
-  async function updateAutomation(id, incomingAutomation, token) {
-    return entityService.updateEntity(id, incomingAutomation, token);
+  async function updateAutomation(id, incomingAutomation, authContext) {
+    return entityService.updateEntity(id, incomingAutomation, authContext);
   }
 
-  async function patchAutomation(id, incomingAutomation, token) {
-    return entityService.patchEntity(id, incomingAutomation, token);
+  async function patchAutomation(id, incomingAutomation, authContext) {
+    return entityService.patchEntity(id, incomingAutomation, authContext);
   }
 
-  async function deleteAutomation(id, token) {
-    return entityService.deleteEntity(id, token);
+  async function deleteAutomation(id, authContext) {
+    return entityService.deleteEntity(id, authContext);
   }
 
   async function searchAutomationMetadata(filters = {}) {
