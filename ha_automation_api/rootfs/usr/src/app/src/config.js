@@ -4,6 +4,7 @@ const fetch = require("node-fetch");
 
 const OPTIONS_PATH = "/data/options.json";
 const DEFAULT_SUPERVISOR_URL = "http://supervisor";
+const API_KEY_HEX_PATTERN = /^[a-f0-9]{64}$/i;
 
 const DEFAULT_OPTIONS = {
   api_key: "",
@@ -20,6 +21,11 @@ const DEFAULT_OPTIONS = {
 
 function generateApiKey() {
   return crypto.randomBytes(32).toString("hex");
+}
+
+function isValidApiKey(value) {
+  const normalizedValue = String(value || "").trim();
+  return API_KEY_HEX_PATTERN.test(normalizedValue);
 }
 
 function persistOptions(nextOptions) {
@@ -134,8 +140,9 @@ function createOptionsStore() {
     const fileOptions = readOptionsFile();
     const nextOptions = normalizeOptions(fileOptions);
 
-    const shouldGenerateApiKey = !nextOptions.api_key;
+    const shouldGenerateApiKey = !isValidApiKey(nextOptions.api_key);
     if (shouldGenerateApiKey) {
+      const previousApiKeyState = nextOptions.api_key ? "invalid" : "empty";
       nextOptions.api_key = generateApiKey();
 
       const optionsToPersist = {
@@ -145,6 +152,7 @@ function createOptionsStore() {
       delete optionsToPersist.regenerate_api_key;
       const persisted = persistOptions(optionsToPersist);
       if (persisted) {
+        console.warn(`API key was ${previousApiKeyState}. Generated and persisted a new API key.`);
         console.log(`Generated API key: ${nextOptions.api_key}`);
       } else {
         console.warn("Using in-memory generated API key for this session only.");

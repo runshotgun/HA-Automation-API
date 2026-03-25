@@ -4,6 +4,7 @@ configuration:
     description: |
       Secret key your app sends with each request.
       Leave blank to let the add-on generate one automatically and save it.
+      If the stored value is invalid, the add-on regenerates it automatically.
       Supported headers:
       - X-API-Key: <your_key>
       - Authorization: Bearer <your_key>
