@@ -55,7 +55,10 @@ function createApiKeyManagedAuthMiddleware(optionsSource) {
 
       const providedApiKey = getApiKey(req);
       if (!providedApiKey) {
-        throw new ApiError(401, "Missing API key. Provide it using X-API-Key header or Authorization: Bearer <api_key>.");
+        throw new ApiError(
+          401,
+          "Missing API key. Provide it using X-API-Key or Authorization: Bearer <api_key>. Find the current key in Home Assistant > Settings > Apps > HA Automation REST API > Configuration > API key."
+        );
       }
 
       if (!timingSafeEqual(providedApiKey, configuredApiKey)) {

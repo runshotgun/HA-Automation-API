@@ -1,6 +1,6 @@
 # HA Automation REST API Add-on
 
-This Home Assistant add-on exposes your `automations.yaml` and `scripts.yaml` through a secure REST API so external tools can manage them safely.
+This Home Assistant app exposes your `automations.yaml` and `scripts.yaml` through a secure REST API so external tools can manage them safely.
 
 It is designed for integrations such as OpenClaw, custom control panels, internal tooling, and automation pipelines that need to read, search, or update Home Assistant automations/scripts over HTTP.
 
@@ -20,7 +20,7 @@ It is designed for integrations such as OpenClaw, custom control panels, interna
 ### 1) Add This Repository to Home Assistant
 
 1. Open Home Assistant.
-2. Go to **Settings -> Add-ons -> Add-on Store**.
+2. Go to **Settings -> Apps -> App Store**.
 3. Open the menu (top-right) and click **Repositories**.
 4. Add:
 
@@ -28,7 +28,7 @@ It is designed for integrations such as OpenClaw, custom control panels, interna
 https://github.com/runshotgun/HA-Automation-API
 ```
 
-5. Refresh add-ons.
+5. Refresh apps.
 
 ### 2) Install the Add-on
 
@@ -37,7 +37,7 @@ https://github.com/runshotgun/HA-Automation-API
 
 ### 3) Configure the Add-on
 
-In the add-on **Configuration** tab, set these values:
+In the app **Configuration** tab, set these values:
 
 **Important:** Allowed IP addresses are mandatory for real use.  
 If this list is empty, authenticated API calls are blocked with `403`.
@@ -58,7 +58,7 @@ If this list is empty, authenticated API calls are blocked with `403`.
 ### 4) Start and Verify
 
 1. Click **Start**.
-2. Open the add-on **Logs** and confirm startup succeeds.
+2. Open the app **Logs** and confirm startup succeeds.
 3. Check health endpoint:
 
 ```bash
@@ -142,7 +142,7 @@ All endpoints except `/health` require authentication:
 
 ## Safety and Concurrency
 
-For `PUT`, `PATCH`, and `DELETE`, the add-on:
+For `PUT`, `PATCH`, and `DELETE`, the app:
 
 1. Validates YAML in memory.
 2. Writes to a temp file.
@@ -162,7 +162,7 @@ Concurrent write requests return `429 Too Many Requests`.
 - `404` automation/script ID not found
 - `422` invalid payload/YAML structure
 - `429` another write is in progress
-- `500` internal failure (check add-on logs)
+- `500` internal failure (check app logs)
 
 ## Troubleshooting
 
@@ -187,6 +187,6 @@ Concurrent write requests return `429 Too Many Requests`.
 
 ### 500 Errors
 
-- Confirm **API key** is set in add-on configuration.
+- Confirm **API key** is set in app configuration.
 - To rotate the key, set a new value in **API key** and save configuration.
-- Confirm the add-on is running with Home Assistant API access enabled.
+- Confirm the app is running with Home Assistant API access enabled.
