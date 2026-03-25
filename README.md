@@ -45,7 +45,6 @@ If this list is empty, authenticated API calls are blocked with `403`.
 | Setting | What to choose | Why it matters |
 | --- | --- | --- |
 | API key | Set manually, or let generator create one | Your app sends this on every request (`X-API-Key` or bearer) |
-| Regenerate API key now (live) | Turn on and save config when you want a new key (refresh) | Generates a new key immediately, auto-resets to off, and updates the API key field |
 | Allow listing | On | Lets clients list automations and scripts |
 | Allow reading | On | Lets clients read one automation/script by ID |
 | Allow searching | On | Lets clients search automations/scripts |
@@ -189,5 +188,5 @@ Concurrent write requests return `429 Too Many Requests`.
 ### 500 Errors
 
 - Confirm **API key** is set in add-on configuration.
-- If needed, turn on **Regenerate API key now (live)** and save config.
+- To rotate the key, set a new value in **API key** and save configuration.
 - Confirm the add-on is running with Home Assistant API access enabled.

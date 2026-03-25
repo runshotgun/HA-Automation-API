@@ -6,12 +6,6 @@ configuration:
       Supported headers:
       - X-API-Key: <your_key>
       - Authorization: Bearer <your_key>
-  regenerate_api_key:
-    name: Regenerate API key now (live)
-    description: |
-      Turn this on and save configuration to generate a new API key immediately.
-      No add-on restart is required.
-      The switch resets to off after generation, and the new key is shown in this API key field.
   allow_list:
     name: Allow listing automations and scripts
     description: Enable GET /automations and GET /scripts to return metadata.

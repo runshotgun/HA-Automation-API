@@ -5,7 +5,6 @@ const OPTIONS_PATH = "/data/options.json";
 
 const DEFAULT_OPTIONS = {
   api_key: "",
-  regenerate_api_key: false,
   allow_list: true,
   allow_read: true,
   allow_search: true,
@@ -50,7 +49,6 @@ function normalizeOptions(sourceOptions = {}) {
   };
 
   options.api_key = String(options.api_key || "").trim();
-  options.regenerate_api_key = Boolean(options.regenerate_api_key);
   options.allow_list = Boolean(options.allow_list);
   options.allow_read = Boolean(options.allow_read);
   options.allow_search = Boolean(options.allow_search);
@@ -98,15 +96,15 @@ function createOptionsStore() {
     const fileOptions = readOptionsFile();
     const nextOptions = normalizeOptions(fileOptions);
 
-    const shouldGenerateApiKey = nextOptions.regenerate_api_key || !nextOptions.api_key;
+    const shouldGenerateApiKey = !nextOptions.api_key;
     if (shouldGenerateApiKey) {
       nextOptions.api_key = generateApiKey();
-      nextOptions.regenerate_api_key = false;
 
       const optionsToPersist = {
         ...fileOptions,
         ...nextOptions,
       };
+      delete optionsToPersist.regenerate_api_key;
       const persisted = persistOptions(optionsToPersist);
       if (persisted) {
         console.log(`Generated API key: ${nextOptions.api_key}`);
